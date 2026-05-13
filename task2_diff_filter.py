@@ -104,7 +104,7 @@ def visualize_filter_response(H_x):
     return (mag_norm * 255).astype(np.uint8), log_mag
 
 
-def main(input_image_path, output_dir="output"):
+def main(input_image_path, output_dir="output", show_output=False):
     """
     主处理流程：
     1. 加载灰度图像
@@ -115,6 +115,7 @@ def main(input_image_path, output_dir="output"):
     6. 可视化滤波器频率响应
     7. 生成组合结果图（原图、水平梯度、垂直梯度、梯度幅值、滤波器响应）
     8. 保存组合图
+    9. 按需显示输出结果
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -145,6 +146,9 @@ def main(input_image_path, output_dir="output"):
     filter_response, filter_log = visualize_filter_response(H_x)
 
     # ----- 7. 生成组合结果图（奥运五环式错位布局）-----
+    # 临时关闭交互绘图，避免原始 fig 在保存阶段弹窗
+    was_interactive = plt.isinteractive()
+    plt.ioff()
     fig = plt.figure(figsize=(18, 10), facecolor='white')
 
     ax_original = fig.add_axes([0.03, 0.525, 0.28, 0.34])
@@ -189,6 +193,20 @@ def main(input_image_path, output_dir="output"):
     output_combined = os.path.join(output_dir, "differential_filter_result.png")
     plt.savefig(output_combined, bbox_inches='tight', facecolor='white', dpi=200)
     plt.close(fig)
+    if was_interactive:
+        plt.ion()
+    if show_output:
+        # 直接显示保存后的图片
+        saved_img = cv2.imread(output_combined, cv2.IMREAD_COLOR)
+        if saved_img is not None:
+            saved_img_rgb = cv2.cvtColor(saved_img, cv2.COLOR_BGR2RGB)
+            plt.figure(facecolor='white')
+            plt.imshow(saved_img_rgb, interpolation='nearest')
+            plt.axis('off')
+            plt.show()
+            plt.close()
+        else:
+            print(f"⚠️ 无法读取输出图像进行显示: {output_combined}")
     print(f"✅ 结果图已保存至: {output_combined}")
 
 
@@ -198,6 +216,8 @@ if __name__ == "__main__":
                         help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录，默认为 output")
+    parser.add_argument("--show", action="store_true",
+                        help="显示生成的输出图片")
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
@@ -212,6 +232,6 @@ if __name__ == "__main__":
         else:
             raise FileNotFoundError(f"图像文件不存在: {args.input}，请检查路径。")
 
-    main(args.input, args.output_dir)
+    main(args.input, args.output_dir, show_output=args.show)
     print("\n处理完成！输出文件：")
     print(f" - {args.output_dir}/differential_filter_result.png")
