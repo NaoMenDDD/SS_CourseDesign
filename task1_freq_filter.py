@@ -142,7 +142,7 @@ def visualize_log_spectrum(magnitude_log):
     return (mag_norm * 255).astype(np.uint8)
 
 
-def main(input_image_path, output_dir="output"):
+def main(input_image_path, output_dir="output", show_output=False):
     """
     主处理流程：
     1. 加载灰度图像
@@ -152,6 +152,7 @@ def main(input_image_path, output_dir="output"):
     5. 应用滤波并重建图像
     6. 生成优化布局的组合图（原图+频谱居中，高通在上，低通在下）
     7. 保存最终PNG图像，并标注截止频率及滤波器参数
+    8. 按需显示输出结果
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -186,6 +187,9 @@ def main(input_image_path, output_dir="output"):
     magnitude_hp_viz = visualize_log_spectrum(magnitude_hp_log)
 
     # ----- 6. 生成流程图式布局 -----
+    # 临时关闭交互绘图，避免原始 fig 在保存阶段弹窗
+    was_interactive = plt.isinteractive()
+    plt.ioff()
     fig = plt.figure(figsize=(26, 12), facecolor='white')
     # 调整网格参数使整体视觉舒适
     gs = fig.add_gridspec(3, 5, hspace=0.20, wspace=0.12,
@@ -300,6 +304,20 @@ def main(input_image_path, output_dir="output"):
     output_path = os.path.join(output_dir, "frequency_filtering_result.png")
     plt.savefig(output_path, bbox_inches='tight', facecolor='white', dpi=200)
     plt.close(fig)
+    if was_interactive:
+        plt.ion()
+    if show_output:
+        # 直接显示保存后的图片
+        saved_img = cv2.imread(output_path, cv2.IMREAD_COLOR)
+        if saved_img is not None:
+            saved_img_rgb = cv2.cvtColor(saved_img, cv2.COLOR_BGR2RGB)
+            plt.figure(facecolor='white')
+            plt.imshow(saved_img_rgb, interpolation='nearest')
+            plt.axis('off')
+            plt.show()
+            plt.close()
+        else:
+            print(f"⚠️ 无法读取输出图像进行显示: {output_path}")
     print(f"✅ 主结果已保存至: {output_path}")
 
 
@@ -309,6 +327,8 @@ if __name__ == "__main__":
                         help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录，默认为 output")
+    parser.add_argument("--show", action="store_true",
+                        help="显示生成的输出图片")
     args = parser.parse_args()
 
     # 检查默认路径是否存在
@@ -324,6 +344,6 @@ if __name__ == "__main__":
         else:
             raise FileNotFoundError(f"图像文件不存在: {args.input} ，请检查路径或创建 img 文件夹并放入图像。")
 
-    main(args.input, args.output_dir)
+    main(args.input, args.output_dir, show_output=args.show)
     print("\n处理完成！输出文件列表：")
     print(f" - {args.output_dir}/frequency_filtering_result.png")
