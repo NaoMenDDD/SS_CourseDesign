@@ -1,0 +1,573 @@
+<!--
+ * @Author: NaoMenDDD 2017954808@qq.com
+ * @Date: 2026-05-13 10:43:04
+ * @LastEditors: NaoMenDDD 2017954808@qq.com
+ * @LastEditTime: 2026-05-13 12:06:42
+ * @Description: 扩展任务二：同态滤波光照校正 - 问题建模与理论方法
+ * 
+ * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扩展任务二：同态滤波光照校正 - 问题建模与理论方法</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f5f5f7;
+            --text: #1d1d1f;
+            --text-secondary: #515154;
+            --text-tertiary: #86868b;
+            --accent: #c76b3d;
+            --accent-light: #fdf3ee;
+            --border: #d2d2d7;
+            --border-light: #e5e5ea;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+            --radius-xl: 24px;
+            --transition: 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+            --transition-fast: 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --font-math: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 1000;
+            transition: width 0.1s linear;
+            width: 0;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 30px 100px;
+        }
+
+        .section {
+            margin-bottom: 100px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 40px 0 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+        }
+
+        .hero.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero .tag {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #1d1d1f 0%, #6b3a2a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            padding: 40px 44px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            border-color: #c5c5cc;
+        }
+
+        .card h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card h2 .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .block-diagram {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 24px 0;
+            padding: 20px 0;
+        }
+
+        .block {
+            background: #ffffff;
+            border: 1.5px solid #dcdce0;
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-fast);
+            min-width: 90px;
+        }
+
+        .block:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .block.accent {
+            border-color: var(--accent);
+            background: #fef9f6;
+            font-weight: 700;
+        }
+
+        .arrow {
+            font-size: 1.8rem;
+            color: #86868b;
+            font-weight: 300;
+            align-self: center;
+        }
+
+        .equation {
+            font-family: var(--font-math);
+            font-size: 1rem;
+            background: #ffffff;
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            margin: 12px 0;
+            border-left: 3px solid var(--accent);
+            overflow-x: auto;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            color: #2c2c30;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .eq-caption {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+            margin-top: -6px;
+            margin-bottom: 12px;
+            padding-left: 24px;
+            font-weight: 500;
+        }
+
+        .knowledge-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 4px 12px;
+            border-radius: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+        }
+
+        .knowledge-badge::before {
+            content: '📘';
+            font-size: 0.85rem;
+        }
+
+        .dual-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin: 16px 0;
+        }
+
+        .info-box {
+            background: #ffffff;
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .info-box h3 {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .canvas-wrapper {
+            background: #ffffff;
+            border-radius: var(--radius);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .canvas-caption {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .spectrum-demo {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-top: 80px;
+            padding: 20px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 16px 60px;
+            }
+
+            .hero h1 {
+                font-size: 1.6rem;
+            }
+
+            .card {
+                padding: 24px 20px;
+            }
+
+            .block-diagram {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+
+            .dual-col {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="container">
+        <div class="hero" id="hero">
+            <span class="tag">信号与系统 · 课设 · 扩展</span>
+            <h1>扩展任务二：同态滤波光照校正</h1>
+            <p class="subtitle">基于光照-反射模型的同态滤波，在频域同时压缩光照动态范围并增强反射细节，校正不均匀光照</p>
+        </div>
+
+        <!-- 第一节：问题建模 -->
+        <div class="section" id="section1">
+            <div class="card">
+                <h2><span class="num">1</span> 问题建模：光照-反射模型与同态系统</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">图像可建模为<strong>光照分量 i(x,y)</strong> 与
+                    <strong>反射分量 r(x,y)</strong> 的乘积。对数变换将乘法转为加法，使线性滤波成为可能。
+                </p>
+                <div class="block-diagram">
+                    <div class="block accent">f(x,y)<br><small>原图</small></div>
+                    <span class="arrow">→</span>
+                    <div class="block">ln<br><small>对数</small></div>
+                    <span class="arrow">→</span>
+                    <div class="block">2D DFT</div>
+                    <span class="arrow">→</span>
+                    <div class="block accent">H<sub>homo</sub>(u,v)<br><small>同态滤波</small></div>
+                    <span class="arrow">→</span>
+                    <div class="block">2D IDFT</div>
+                    <span class="arrow">→</span>
+                    <div class="block">exp<br><small>指数</small></div>
+                    <span class="arrow">→</span>
+                    <div class="block accent">g(x,y)<br><small>校正后</small></div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心方程</h3>
+                    <div class="equation">
+                        f(x,y) = i(x,y) · r(x,y) &nbsp;&nbsp;（光照×反射）
+                    </div>
+                    <div class="eq-caption">图像形成模型：i 变化缓慢（低频），r 包含细节（高频）。不均匀光照 = i 的动态范围过大。</div>
+                    <div class="equation">
+                        ln[f(x,y)] = ln[i(x,y)] + ln[r(x,y)]
+                    </div>
+                    <div class="eq-caption">对数变换将乘法分离为加法，使频域线性滤波可分别处理两个分量。</div>
+                    <div class="equation">
+                        H<sub>homo</sub>(u,v) = (γ<sub>H</sub> − γ<sub>L</sub>) · [1 − exp(−c·D²/D₀²)] + γ<sub>L</sub>
+                    </div>
+                    <div class="eq-caption">同态滤波器：γ<sub>L</sub>
+                        <1 衰减低频（压缩光照），γ<sub>H</sub>>1 增强高频（提升反射细节）。c 控制过渡陡峭度。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二节：理论方法 -->
+        <div class="section" id="section2">
+            <div class="card">
+                <h2><span class="num">2</span> 理论方法：频域中分离光照与反射</h2>
+                <div class="spectrum-demo">
+                    <div class="canvas-wrapper">
+                        <canvas id="homoFilterCanvas" width="300" height="200"></canvas>
+                        <div class="canvas-caption">同态滤波器径向响应 H<sub>homo</sub>(D)</div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="effectCanvas" width="300" height="200"></canvas>
+                        <div class="canvas-caption">光照分量压缩 + 反射分量增强</div>
+                    </div>
+                </div>
+                <div class="dual-col" style="margin-top:20px;">
+                    <div class="info-box">
+                        <h3>🔅 光照分量 i(x,y)</h3>
+                        <p><strong>空间变化缓慢</strong>，对应频域<strong>低频</strong>。不均匀光照使图像部分区域过亮或过暗。同态滤波通过 γ<sub>L</sub>
+                            < 1 压缩低频，使整体亮度均匀化。</p>
+                    </div>
+                    <div class="info-box">
+                        <h3>🔍 反射分量 r(x,y)</h3>
+                        <p><strong>空间变化剧烈</strong>，对应频域<strong>高频</strong>。包含边缘、纹理等细节信息。同态滤波通过 γ<sub>H</sub> > 1
+                            增强高频，使暗部细节清晰可见。</p>
+                    </div>
+                </div>
+                <div style="margin-top:14px;">
+                    <span class="knowledge-badge">非线性滤波 · 第6章</span>
+                    <span class="knowledge-badge">对数/指数变换</span>
+                    <span class="knowledge-badge">光照-反射模型</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三节：效果对比 -->
+        <div class="section" id="section3">
+            <div class="card">
+                <h2><span class="num">3</span> 效果评估：校正前后对比维度</h2>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px;">
+                    <div
+                        style="background:#fff; border-radius:var(--radius); padding:18px; text-align:center; box-shadow:var(--shadow-sm);">
+                        <div style="font-weight:700; margin-bottom:8px;">全局亮度均匀化</div>
+                        <p style="font-size:0.82rem; color:var(--text-secondary);">暗区提亮、亮区压暗，整体视觉均衡</p>
+                    </div>
+                    <div
+                        style="background:#fff; border-radius:var(--radius); padding:18px; text-align:center; box-shadow:var(--shadow-sm);">
+                        <div style="font-weight:700; margin-bottom:8px;">暗部细节增强</div>
+                        <p style="font-size:0.82rem; color:var(--text-secondary);">阴影区域纹理变得清晰可见</p>
+                    </div>
+                    <div
+                        style="background:#fff; border-radius:var(--radius); padding:18px; text-align:center; box-shadow:var(--shadow-sm);">
+                        <div style="font-weight:700; margin-bottom:8px;">动态范围压缩</div>
+                        <p style="font-size:0.82rem; color:var(--text-secondary);">高对比度场景变得可视范围更大</p>
+                    </div>
+                    <div
+                        style="background:#fff; border-radius:var(--radius); padding:18px; text-align:center; box-shadow:var(--shadow-sm);">
+                        <div style="font-weight:700; margin-bottom:8px;">参数可调节</div>
+                        <p style="font-size:0.82rem; color:var(--text-secondary);">γ<sub>L</sub>/γ<sub>H</sub>/c/D₀
+                            灵活控制校正强度</p>
+                    </div>
+                </div>
+                <p style="color:var(--text-secondary); margin-top:20px;">
+                    <strong>典型参数设置：</strong>γ<sub>L</sub> = 0.4~0.6，γ<sub>H</sub> = 1.5~2.5，c = 1~2，D₀ 根据图像频谱分布选择。
+                    与传统直方图均衡化相比，同态滤波基于频域处理，能更自然地保留图像结构。
+                </p>
+                <span class="knowledge-badge">频域增强技术</span>
+                <span class="knowledge-badge">参数优化</span>
+            </div>
+        </div>
+        <div class="footer-note">
+            信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 同态滤波光照校正 · 问题建模与理论方法
+        </div>
+    </div>
+    <script>
+        (() => {
+            const progressBar = document.getElementById('progressBar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                progressBar.style.width = (scrollTop / docHeight) * 100 + '%';
+            });
+            const sections = document.querySelectorAll('.section');
+            const hero = document.getElementById('hero');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+            }, { rootMargin: '0px 0px -60px 0px', threshold: 0.15 });
+            sections.forEach(s => observer.observe(s));
+            const heroObs = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+            }, { threshold: 0.2 });
+            heroObs.observe(hero);
+
+            function drawHomoFilter() {
+                const canvas = document.getElementById('homoFilterCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                const padL = 50, padR = 20, padT = 20, padB = 35;
+                const plotW = w - padL - padR, plotH = h - padT - padB;
+                ctx.strokeStyle = '#d2d2d7';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, padT);
+                ctx.lineTo(padL, padT + plotH);
+                ctx.lineTo(padL + plotW, padT + plotH);
+                ctx.stroke();
+                ctx.fillStyle = '#86868b';
+                ctx.font = '10px -apple-system, sans-serif';
+                ctx.fillText('频率 D →', padL + plotW / 2, padT + plotH + 22);
+                // 绘制同态滤波器曲线
+                const gammaL = 0.5, gammaH = 2.0;
+                ctx.beginPath();
+                ctx.strokeStyle = '#c76b3d';
+                ctx.lineWidth = 2.5;
+                for (let i = 0; i <= 100; i++) {
+                    const d = i / 100;
+                    const H = (gammaH - gammaL) * (1 - Math.exp(-1.5 * d * d / 0.25)) + gammaL;
+                    const sx = padL + d * plotW;
+                    const sy = padT + (1 - H / 2.5) * plotH;
+                    if (i === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = '#86868b';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, padT + (1 - gammaL / 2.5) * plotH);
+                ctx.lineTo(padL + plotW, padT + (1 - gammaL / 2.5) * plotH);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#86868b';
+                ctx.fillText('γ_L=' + gammaL, padL + plotW - 60, padT + (1 - gammaL / 2.5) * plotH - 4);
+                ctx.fillText('γ_H=' + gammaH, padL + plotW - 60, padT + 8);
+            }
+
+            function drawEffect() {
+                const canvas = document.getElementById('effectCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                const imageData = ctx.createImageData(w, h);
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        // 模拟不均匀光照：左侧暗右侧亮
+                        const lighting = 0.3 + 0.7 * (x / w);
+                        const texture = 0.5 + 0.3 * Math.sin(x * 0.4) * Math.cos(y * 0.3);
+                        const original = lighting * texture;
+                        // 模拟同态滤波后：光照被压缩，纹理增强
+                        const corrected = Math.pow(lighting, 0.5) * Math.pow(texture, 1.5);
+                        const val = Math.floor(Math.min(255, corrected * 200 + 20));
+                        const idx = (y * w + x) * 4;
+                        imageData.data[idx] = val;
+                        imageData.data[idx + 1] = val;
+                        imageData.data[idx + 2] = val;
+                        imageData.data[idx + 3] = 255;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px -apple-system, sans-serif';
+                ctx.fillText('暗区细节可见 ↑', 10, 18);
+                ctx.fillText('亮度均匀', w - 65, h - 8);
+            }
+
+            setTimeout(() => { drawHomoFilter(); drawEffect(); }, 400);
+            window.addEventListener('resize', () => { drawHomoFilter(); drawEffect(); });
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,554 @@
+<!--
+ * @Author: NaoMenDDD 2017954808@qq.com
+ * @Date: 2026-05-13 10:43:11
+ * @LastEditors: NaoMenDDD 2017954808@qq.com
+ * @LastEditTime: 2026-05-13 12:05:46
+ * @Description: 扩展任务三：频域高通与Sobel对比 - 问题建模与理论方法
+ * 
+ * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扩展任务三：频域高通与Sobel对比 - 问题建模与理论方法</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f5f5f7;
+            --text: #1d1d1f;
+            --text-secondary: #515154;
+            --text-tertiary: #86868b;
+            --accent: #3b6db5;
+            --accent-light: #eaf1f9;
+            --border: #d2d2d7;
+            --border-light: #e5e5ea;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+            --radius-xl: 24px;
+            --transition: 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --font-math: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 1000;
+            transition: width 0.1s linear;
+            width: 0;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 30px 100px;
+        }
+
+        .section {
+            margin-bottom: 100px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 40px 0 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+        }
+
+        .hero.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero .tag {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #1d1d1f 0%, #2a4a70 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            padding: 40px 44px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            border-color: #c5c5cc;
+        }
+
+        .card h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card h2 .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .block-diagram {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin: 24px 0;
+            padding: 20px 0;
+        }
+
+        .block {
+            background: #ffffff;
+            border: 1.5px solid #dcdce0;
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s;
+            min-width: 80px;
+        }
+
+        .block:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .block.accent {
+            border-color: var(--accent);
+            background: #f4f7fc;
+            font-weight: 700;
+        }
+
+        .block.accent2 {
+            border-color: #c76b3d;
+            background: #fef9f6;
+            font-weight: 700;
+        }
+
+        .arrow {
+            font-size: 1.6rem;
+            color: #86868b;
+            font-weight: 300;
+            align-self: center;
+        }
+
+        .equation {
+            font-family: var(--font-math);
+            font-size: 0.95rem;
+            background: #ffffff;
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            margin: 10px 0;
+            border-left: 3px solid var(--accent);
+            overflow-x: auto;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            color: #2c2c30;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .eq-caption {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+            margin-top: -6px;
+            margin-bottom: 12px;
+            padding-left: 24px;
+        }
+
+        .knowledge-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 4px 12px;
+            border-radius: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+        }
+
+        .knowledge-badge::before {
+            content: '📘';
+            font-size: 0.85rem;
+        }
+
+        .compare-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            margin: 20px 0;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            font-size: 0.85rem;
+        }
+
+        .compare-table .th {
+            background: #1d1d1f;
+            color: #fff;
+            padding: 12px 16px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .compare-table .td {
+            background: #ffffff;
+            padding: 12px 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-secondary);
+        }
+
+        .compare-table .td:first-child {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .canvas-wrapper {
+            background: #ffffff;
+            border-radius: var(--radius);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .canvas-caption {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .demo-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-top: 80px;
+            padding: 20px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 16px 60px;
+            }
+
+            .hero h1 {
+                font-size: 1.5rem;
+            }
+
+            .card {
+                padding: 24px 20px;
+            }
+
+            .block-diagram {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+
+            .compare-table {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="container">
+        <div class="hero" id="hero">
+            <span class="tag">信号与系统 · 课设 · 扩展</span>
+            <h1>扩展任务三：频域高通与Sobel边缘检测</h1>
+            <p class="subtitle">将频域理想高通滤波结果与空域Sobel算子边缘检测结果进行对比，分析两种方法的原理差异与效果异同</p>
+        </div>
+
+        <!-- 第一节：双路径系统建模 -->
+        <div class="section" id="section1">
+            <div class="card">
+                <h2><span class="num">1</span> 问题建模：两条边缘提取路径</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                    同一输入图像分别经过<strong>频域高通滤波</strong>和<strong>空域Sobel算子</strong>，输出两幅边缘强度图进行对比。</p>
+                <div class="block-diagram" style="flex-wrap:wrap; gap:20px;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;">
+                        <span style="font-weight:700; color:var(--accent);">路径A (频域):</span>
+                        <div class="block accent">f(x,y)</div><span class="arrow">→</span>
+                        <div class="block">2D DFT</div><span class="arrow">→</span>
+                        <div class="block accent">HPF<br><small>H<sub>hp</sub></small></div><span class="arrow">→</span>
+                        <div class="block">IFFT</div><span class="arrow">→</span>
+                        <div class="block accent">g<sub>A</sub>(x,y)</div>
+                    </div>
+                    <div
+                        style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:8px;">
+                        <span style="font-weight:700; color:#c76b3d;">路径B (空域):</span>
+                        <div class="block accent2">f(x,y)</div><span class="arrow">→</span>
+                        <div class="block accent2">Sobel<br><small>Gx, Gy</small></div><span class="arrow">→</span>
+                        <div class="block accent2">|G|<br><small>幅值</small></div><span class="arrow">→</span>
+                        <div class="block accent2">g<sub>B</sub>(x,y)</div>
+                    </div>
+                </div>
+                <div style="margin-top:20px;">
+                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心方程对比</h3>
+                    <div class="equation">
+                        H<sub>hp</sub>(u,v) = 1 − H<sub>lp</sub>(u,v) &nbsp;→&nbsp; g<sub>A</sub> = IFFT[ H<sub>hp</sub>
+                        · FFT{f} ]
+                    </div>
+                    <div class="eq-caption">频域高通：全局频率选择，低频截断，高频保留。理想型有振铃效应。</div>
+                    <div class="equation">
+                        G<sub>x</sub> = f ∗ S<sub>x</sub> , &nbsp; G<sub>y</sub> = f ∗ S<sub>y</sub> &nbsp;→&nbsp; |G| =
+                        √(G<sub>x</sub>² + G<sub>y</sub>²)
+                    </div>
+                    <div class="eq-caption">
+                        Sobel算子：3×3局部卷积，S<sub>x</sub>=[[-1,0,1],[-2,0,2],[-1,0,1]]，S<sub>y</sub>=S<sub>x</sub>ᵀ。自带平滑效果。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二节：理论对比 -->
+        <div class="section" id="section2">
+            <div class="card">
+                <h2><span class="num">2</span> 理论方法：两种边缘检测范式的对比</h2>
+                <div class="demo-row">
+                    <div class="canvas-wrapper">
+                        <canvas id="freqEdgeCanvas" width="260" height="200"></canvas>
+                        <div class="canvas-caption">频域高通边缘 (含振铃)</div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="sobelEdgeCanvas" width="260" height="200"></canvas>
+                        <div class="canvas-caption">Sobel边缘 (平滑干净)</div>
+                    </div>
+                </div>
+                <div class="compare-table" style="margin-top:20px;">
+                    <div class="th">对比维度</div>
+                    <div class="th">频域高通滤波</div>
+                    <div class="th">Sobel空域卷积</div>
+                    <div class="td">处理域</div>
+                    <div class="td">频域 (全局)</div>
+                    <div class="td">空域 (局部3×3)</div>
+                    <div class="td">理论基础</div>
+                    <div class="td">频率选择 / 卷积定理</div>
+                    <div class="td">离散梯度近似</div>
+                    <div class="td">平滑效果</div>
+                    <div class="td">无平滑，噪声敏感</div>
+                    <div class="td">内置平滑 (系数加权)</div>
+                    <div class="td">振铃效应</div>
+                    <div class="td">有 (理想型)</div>
+                    <div class="td">无</div>
+                    <div class="td">计算复杂度</div>
+                    <div class="td">O(N²logN) (FFT)</div>
+                    <div class="td">O(N²) (卷积)</div>
+                    <div class="td">边缘定位</div>
+                    <div class="td">较粗，有扩散</div>
+                    <div class="td">较细，定位准</div>
+                </div>
+                <div style="margin-top:14px;">
+                    <span class="knowledge-badge">卷积定理 · 第4章</span>
+                    <span class="knowledge-badge">频域滤波 · 第6章</span>
+                    <span class="knowledge-badge">空域梯度算子</span>
+                    <span class="knowledge-badge">边缘检测理论</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三节：结论 -->
+        <div class="section" id="section3">
+            <div class="card">
+                <h2><span class="num">3</span> 结论：适用场景与互补性</h2>
+                <p style="color:var(--text-secondary);">
+                    <strong>频域高通</strong>适合需要<strong>全局频率控制</strong>的场景（如批量处理、频域分析），但振铃效应和噪声敏感是其主要缺陷。
+                    <strong>Sobel算子</strong>计算简单、边缘定位准确、自带平滑，适合<strong>实时应用和硬件实现</strong>。
+                    两者在数学上通过<strong>卷积定理</strong>相关联——高通滤波器的冲激响应与Sobel核在本质上是不同的梯度近似方式。
+                    实际应用中，Sobel更常用于边缘检测，而频域高通更多用于图像增强和预处理。
+                </p>
+                <span class="knowledge-badge">空域vs频域</span>
+                <span class="knowledge-badge">工程应用选择</span>
+            </div>
+        </div>
+        <div class="footer-note">
+            信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 频域高通与Sobel对比 · 问题建模与理论方法
+        </div>
+    </div>
+    <script>
+        (() => {
+            const progressBar = document.getElementById('progressBar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                progressBar.style.width = (scrollTop / docHeight) * 100 + '%';
+            });
+            const sections = document.querySelectorAll('.section');
+            const hero = document.getElementById('hero');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+            }, { rootMargin: '0px 0px -60px 0px', threshold: 0.15 });
+            sections.forEach(s => observer.observe(s));
+            const heroObs = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+            }, { threshold: 0.2 });
+            heroObs.observe(hero);
+
+            // 模拟频域高通边缘 (带振铃)
+            function drawFreqEdge() {
+                const canvas = document.getElementById('freqEdgeCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                const imageData = ctx.createImageData(w, h);
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const dx = x - w / 2, dy = y - h / 2;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        // 模拟圆形边缘
+                        const edgeDist = Math.abs(dist - 65);
+                        const edge = Math.exp(-edgeDist * edgeDist / 50);
+                        // 振铃：在边缘外添加波纹
+                        const ringDist = dist - 65;
+                        const ringing = (ringDist > 0) ? Math.abs(Math.sin(ringDist * 0.8) / (ringDist * 0.3 + 0.5)) * 0.5 : 0;
+                        let val = edge * 180 + ringing * 100 + 15;
+                        val = Math.min(255, Math.max(5, val));
+                        const idx = (y * w + x) * 4;
+                        imageData.data[idx] = val; imageData.data[idx + 1] = val; imageData.data[idx + 2] = val; imageData.data[idx + 3] = 255;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px -apple-system, sans-serif';
+                ctx.fillText('振铃波纹 →', w - 75, 16);
+            }
+
+            // 模拟Sobel边缘 (平滑干净)
+            function drawSobelEdge() {
+                const canvas = document.getElementById('sobelEdgeCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                const imageData = ctx.createImageData(w, h);
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const dx = x - w / 2, dy = y - h / 2;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const edgeDist = Math.abs(dist - 65);
+                        const edge = Math.exp(-edgeDist * edgeDist / 60);
+                        let val = edge * 200 + 10;
+                        val = Math.min(255, Math.max(5, val));
+                        const idx = (y * w + x) * 4;
+                        imageData.data[idx] = val; imageData.data[idx + 1] = val; imageData.data[idx + 2] = val; imageData.data[idx + 3] = 255;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px -apple-system, sans-serif';
+                ctx.fillText('边缘清晰', w - 65, 16);
+            }
+
+            setTimeout(() => { drawFreqEdge(); drawSobelEdge(); }, 400);
+            window.addEventListener('resize', () => { drawFreqEdge(); drawSobelEdge(); });
+        })();
+    </script>
+</body>
+
+</html>

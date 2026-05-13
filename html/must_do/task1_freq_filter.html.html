@@ -1,0 +1,710 @@
+<!--
+ * @Author: NaoMenDDD 2017954808@qq.com
+ * @Date: 2026-05-13 10:39:46
+ * @LastEditors: QingKongWuYu 2017954808@qq.com
+ * @LastEditTime: 2026-05-13 11:51:38
+ * @Description: 任务一：灰度图像频域变换与滤波 - 问题建模与理论方法
+ * 
+ * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灰度图像频域变换与滤波 - 问题建模与理论方法</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f5f5f7;
+            --surface2: #fafafa;
+            --text: #1d1d1f;
+            --text-secondary: #515154;
+            --text-tertiary: #86868b;
+            --accent: #0071e3;
+            --accent-light: #e8f2fd;
+            --accent-dark: #005bb5;
+            --border: #d2d2d7;
+            --border-light: #e5e5ea;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+            --radius-sm: 10px;
+            --radius: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --transition: 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+            --transition-fast: 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --font-math: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        /* 顶部导航指示条 */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 1000;
+            transition: width 0.1s linear;
+            width: 0;
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 30px 100px;
+        }
+
+        /* 区块 */
+        .section {
+            margin-bottom: 100px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 标题区域 */
+        .hero {
+            text-align: center;
+            padding: 40px 0 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+        }
+
+        .hero.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero .tag {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #1d1d1f 0%, #3a3a3c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        /* 卡片基础 */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            padding: 40px 44px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            border-color: #c5c5cc;
+        }
+
+        .card h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card h2 .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* 系统框图 */
+        .block-diagram {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 24px 0;
+            padding: 20px 0;
+        }
+
+        .block {
+            background: #ffffff;
+            border: 1.5px solid #dcdce0;
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-fast);
+            min-width: 90px;
+            letter-spacing: -0.01em;
+        }
+
+        .block:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .block.accent {
+            border-color: var(--accent);
+            background: #f4f7fc;
+            color: #1d1d1f;
+            font-weight: 700;
+        }
+
+        .arrow {
+            font-size: 1.8rem;
+            color: #86868b;
+            font-weight: 300;
+            align-self: center;
+            transition: color var(--transition-fast);
+        }
+
+        .arrow:hover {
+            color: var(--accent);
+        }
+
+        .block-label {
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+            text-align: center;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* 方程展示 */
+        .equation {
+            font-family: var(--font-math);
+            font-size: 1.1rem;
+            background: #ffffff;
+            padding: 18px 24px;
+            border-radius: var(--radius);
+            margin: 16px 0;
+            border-left: 3px solid var(--accent);
+            overflow-x: auto;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            color: #2c2c30;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow var(--transition-fast);
+        }
+
+        .equation:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .eq-caption {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            margin-top: -8px;
+            margin-bottom: 16px;
+            padding-left: 28px;
+            font-weight: 500;
+        }
+
+        /* 知识点标签 */
+        .knowledge-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 4px 12px;
+            border-radius: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+        }
+
+        .knowledge-badge::before {
+            content: '📘';
+            font-size: 0.85rem;
+        }
+
+        /* 频谱示意图 */
+        .spectrum-demo {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .canvas-wrapper {
+            background: #ffffff;
+            border-radius: var(--radius);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .canvas-wrapper canvas {
+            display: block;
+            border-radius: 8px;
+        }
+
+        .canvas-caption {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        /* 结果比较网格 */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .compare-item {
+            background: #ffffff;
+            border-radius: var(--radius);
+            padding: 18px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-fast);
+            border: 1px solid transparent;
+        }
+
+        .compare-item:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-light);
+            transform: translateY(-2px);
+        }
+
+        .compare-item .label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .compare-item .desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* 页脚 */
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-top: 80px;
+            padding: 20px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 16px 60px;
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .card {
+                padding: 24px 20px;
+            }
+
+            .block-diagram {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+
+            .equation {
+                font-size: 0.85rem;
+                padding: 12px 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="container">
+        <!-- 标题区 -->
+        <div class="hero" id="hero">
+            <span class="tag">信号与系统 · 课设</span>
+            <h1>任务一：灰度图像频域变换与滤波</h1>
+            <p class="subtitle">将灰度图像变换至二维频域，分析频谱并确定截止频率</p>
+            <p class="subtitle">设计低通/高通滤波器，对比滤波前后空域图像的差异</p>
+        </div>
+
+        <!-- 第一部分：问题建模 - 系统框图 -->
+        <div class="section" id="section1">
+            <div class="card">
+                <h2><span class="num">1</span> 问题建模：系统流程与方程</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                    整体处理链路：从空域图像出发，通过二维傅里叶变换进入频域，应用滤波器后逆变换回空域，最后对比原图与处理结果。</p>
+
+                <!-- 系统框图 -->
+                <div class="block-diagram">
+                    <div class="block accent">输入图像<br><small style="font-weight:400;">f(x,y)</small></div>
+                    <span class="arrow">→</span>
+                    <div class="block">2D FFT<br><small style="font-weight:400;">频移</small></div>
+                    <span class="arrow">→</span>
+                    <div class="block accent">频域滤波<br><small style="font-weight:400;">H(u,v)·F(u,v)</small></div>
+                    <span class="arrow">→</span>
+                    <div class="block">2D IFFT<br><small style="font-weight:400;">逆变换</small></div>
+                    <span class="arrow">→</span>
+                    <div class="block accent">输出图像<br><small style="font-weight:400;">g(x,y)</small></div>
+                </div>
+                <div style="display:flex; justify-content:center; gap:40px; flex-wrap:wrap;">
+                    <span class="block-label">空域</span>
+                    <span class="block-label">频域</span>
+                    <span class="block-label">频域</span>
+                    <span class="block-label">频域→空域</span>
+                    <span class="block-label">空域</span>
+                </div>
+
+                <div style="margin-top: 28px;">
+                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心数学方程</h3>
+                    <div class="equation">
+                        F(u,v) = <sup>M−1</sup><span style="font-size:0.75em;">Σ</span><sub>x=0</sub>
+                        <sup>N−1</sup><span style="font-size:0.75em;">Σ</span><sub>y=0</sub> f(x,y) · e<sup>−j·2π·(ux/M
+                            + vy/N)</sup>
+                    </div>
+                    <div class="eq-caption">二维离散傅里叶变换 (2D DFT) —— 将空间亮度分布分解为不同频率的正弦分量。</div>
+                    <div class="equation">
+                        G(u,v) = H(u,v) · F(u,v) &nbsp;&nbsp;（频域逐点相乘）
+                    </div>
+                    <div class="eq-caption">频域滤波的本质：对每个频率分量加权。低通 H 抑制高频，高通 H 抑制低频。</div>
+                    <div class="equation">
+                        g(x,y) = <sup>1</sup>/<sub>MN</sub> <sup>M−1</sup><span
+                            style="font-size:0.75em;">Σ</span><sub>u=0</sub> <sup>N−1</sup><span
+                            style="font-size:0.75em;">Σ</span><sub>v=0</sub> G(u,v) · e<sup>j·2π·(ux/M + vy/N)</sup>
+                    </div>
+                    <div class="eq-caption">二维逆傅里叶变换 (2D IFFT) —— 重建滤波后的空域图像。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二部分：理论方法 - 频谱分析与截止频率 -->
+        <div class="section" id="section2">
+            <div class="card">
+                <h2><span class="num">2</span> 理论方法：频谱解读与截止频率</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">对频谱幅度 |F(u,v)| 进行可视化分析，确定图像的主要频率成分分布及有效带宽。
+                </p>
+
+                <!-- 频谱示意图（Canvas绘制简单的模拟频谱） -->
+                <div class="spectrum-demo">
+                    <div class="canvas-wrapper">
+                        <canvas id="spectrumCanvas" width="260" height="260"></canvas>
+                        <div class="canvas-caption">对数频谱示意图 (中心为低频)</div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="profileCanvas" width="260" height="260"></canvas>
+                        <div class="canvas-caption">径向平均功率谱曲线</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:12px;">截止频率判定方法</h3>
+                    <div class="equation">
+                        P(r) = <sup>1</sup>/<sub>N<sub>r</sub></sub> <span
+                            style="font-size:0.75em;">Σ</span><sub>θ</sub> |F(r·cosθ, r·sinθ)|²
+                    </div>
+                    <div class="eq-caption">径向平均功率谱：沿半径 r 统计所有方向的能量均值。当 P(r) 降至峰值的 1/2（−3dB）或能量累计达95%时的 r 即为截止频率。</div>
+                    <p style="color: var(--text-secondary); margin-top:16px;">
+                        <strong>物理意义：</strong>低频（中心）对应图像整体亮度和缓慢渐变；中频对应纹理细节；高频（外围）对应锐利边缘和噪声。截止频率是区分“保留”与“滤除”的阈值。
+                    </p>
+                    <div style="margin-top:14px;">
+                        <span class="knowledge-badge">第4章 · 傅里叶变换</span>
+                        <span class="knowledge-badge">第6章 · 频率响应与带宽</span>
+                        <span class="knowledge-badge">频谱分析与可视化</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三部分：低通与高通滤波理论 -->
+        <div class="section" id="section3">
+            <div class="card">
+                <h2><span class="num">3</span> 低通滤波与高通滤波：原理与效果</h2>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px; align-items: start;">
+                    <div>
+                        <h3 style="font-weight:700; font-size:1rem; color:#3b8c6e; margin-bottom:10px;">低通滤波 (LPF)</h3>
+                        <div class="equation" style="border-left-color:#3b8c6e;">
+                            H<sub>lp</sub>(u,v) = { 1, D(u,v) ≤ D₀ ; 0, D(u,v) > D₀ }
+                        </div>
+                        <p style="font-size:0.9rem; color:var(--text-secondary);">
+                            理想低通：保留低频（平滑区域），截断高频（边缘/噪声）。<br>结果：图像变模糊、柔和，抑制噪声。<br>缺陷：陡峭截断导致<strong>振铃效应</strong>（空域出现虚假波纹）。
+                        </p>
+                        <span class="knowledge-badge">理想滤波器</span>
+                        <span class="knowledge-badge">卷积定理 · 第4章</span>
+                    </div>
+                    <div>
+                        <h3 style="font-weight:700; font-size:1rem; color:#c76b3d; margin-bottom:10px;">高通滤波 (HPF)</h3>
+                        <div class="equation" style="border-left-color:#c76b3d;">
+                            H<sub>hp</sub>(u,v) = 1 − H<sub>lp</sub>(u,v)
+                        </div>
+                        <p style="font-size:0.9rem; color:var(--text-secondary);">
+                            理想高通：保留高频（边缘细节），移除低频（平滑区域）。<br>结果：图像仅剩边缘轮廓，平坦区域变暗。<br>实践中常保留部分直流分量（高频增强）以避免过暗。</p>
+                        <span class="knowledge-badge">高通滤波 · 第6章</span>
+                        <span class="knowledge-badge">高频增强技术</span>
+                    </div>
+                </div>
+                <div style="margin-top:24px;">
+                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">滤波前后对比维度</h3>
+                    <div class="comparison-grid">
+                        <div class="compare-item">
+                            <div class="label">空域视觉</div>
+                            <div class="desc">低通后平滑柔和，高通后边缘突出、背景暗沉</div>
+                        </div>
+                        <div class="compare-item">
+                            <div class="label">差异图</div>
+                            <div class="desc">|原图 − 滤波结果| 亮区表示被移除的频率成分</div>
+                        </div>
+                        <div class="compare-item">
+                            <div class="label">频域能量</div>
+                            <div class="desc">低通后频谱外围变暗；高通后中心变暗</div>
+                        </div>
+                        <div class="compare-item">
+                            <div class="label">量化指标</div>
+                            <div class="desc">MSE / SSIM 数值衡量失真程度</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 频域变换与滤波 · 问题建模与理论方法
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            // —— 滚动进度条 ——
+            const progressBar = document.getElementById('progressBar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const scrollPercent = (scrollTop / docHeight) * 100;
+                progressBar.style.width = scrollPercent + '%';
+            });
+
+            // —— 滚动触发淡入动画 ——
+            const sections = document.querySelectorAll('.section');
+            const hero = document.getElementById('hero');
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px 0px -60px 0px',
+                threshold: 0.15
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => observer.observe(section));
+            if (hero) {
+                const heroObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) entry.target.classList.add('visible');
+                    });
+                }, { threshold: 0.2 });
+                heroObserver.observe(hero);
+            }
+
+            // —— 绘制频谱示意图 (Canvas) ——
+            function drawSpectrum() {
+                const canvas = document.getElementById('spectrumCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                const cx = w / 2, cy = h / 2;
+                // 模拟对数频谱：中心亮，向外逐渐变暗，带一些径向纹理
+                const imageData = ctx.createImageData(w, h);
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const dx = x - cx, dy = y - cy;
+                        const r = Math.sqrt(dx * dx + dy * dy) / (Math.min(cx, cy));
+                        // 基础强度：中心亮，衰减
+                        let intensity = Math.exp(-r * 3.5) * 220 + 20;
+                        // 添加一些方向性变化模拟真实频谱
+                        const angle = Math.atan2(dy, dx);
+                        const ripple = Math.sin(r * 25) * 0.15 + Math.cos(angle * 6 + r * 10) * 0.1;
+                        intensity *= (1 + ripple * 0.4);
+                        // 加一些随机高频点
+                        if (r > 0.2 && Math.random() < 0.02) intensity = Math.min(255, intensity * 1.8);
+                        const idx = (y * w + x) * 4;
+                        const val = Math.min(255, Math.max(0, intensity));
+                        imageData.data[idx] = val;
+                        imageData.data[idx + 1] = val;
+                        imageData.data[idx + 2] = val;
+                        imageData.data[idx + 3] = 255;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            function drawProfile() {
+                const canvas = document.getElementById('profileCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                // 绘制坐标轴
+                ctx.strokeStyle = '#d2d2d7';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(40, h - 30);
+                ctx.lineTo(w - 20, h - 30);
+                ctx.moveTo(40, h - 30);
+                ctx.lineTo(40, 20);
+                ctx.stroke();
+                // 标签
+                ctx.fillStyle = '#86868b';
+                ctx.font = '12px -apple-system, sans-serif';
+                ctx.fillText('频率 r', w / 2, h - 6);
+                ctx.save();
+                ctx.translate(14, h / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('功率 P(r)', -30, 0);
+                ctx.restore();
+                // 绘制递减功率曲线
+                ctx.beginPath();
+                ctx.strokeStyle = '#0071e3';
+                ctx.lineWidth = 2.5;
+                const startX = 40, endX = w - 20;
+                const baseY = h - 30;
+                const maxY = 30;
+                const peakX = startX + 8;
+                ctx.moveTo(startX, baseY);
+                for (let x = startX; x <= endX; x++) {
+                    const t = (x - startX) / (endX - startX);
+                    // 模拟功率下降：从高处下降，有一段平坦然后快速衰减
+                    let power;
+                    if (t < 0.08) power = 0.95;
+                    else power = Math.exp(-t * 4.2) * 0.95;
+                    const y = baseY - power * (baseY - maxY);
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                // 标记截止频率 (-3dB)
+                const cutoffT = 0.28;
+                const cutoffX = startX + cutoffT * (endX - startX);
+                const cutoffPower = Math.exp(-cutoffT * 4.2) * 0.95;
+                const cutoffY = baseY - cutoffPower * (baseY - maxY);
+                ctx.beginPath();
+                ctx.setLineDash([5, 4]);
+                ctx.strokeStyle = '#c76b3d';
+                ctx.lineWidth = 1.5;
+                ctx.moveTo(cutoffX, cutoffY);
+                ctx.lineTo(cutoffX, baseY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#c76b3d';
+                ctx.font = 'bold 11px -apple-system, sans-serif';
+                ctx.fillText('截止频率 D₀', cutoffX + 4, cutoffY - 6);
+                // 标记峰值
+                ctx.fillStyle = '#1d1d1f';
+                ctx.beginPath();
+                ctx.arc(peakX, baseY - 0.95 * (baseY - maxY), 4, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillText('峰值', peakX + 6, baseY - 0.95 * (baseY - maxY) - 6);
+            }
+
+            // 延迟绘制以确保canvas可见
+            setTimeout(() => {
+                drawSpectrum();
+                drawProfile();
+            }, 400);
+
+            // 窗口大小变化时重绘（可选）
+            window.addEventListener('resize', () => {
+                drawSpectrum();
+                drawProfile();
+            });
+        })();
+    </script>
+</body>
+
+</html>
