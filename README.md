@@ -90,3 +90,19 @@
 1. 对比理想低通、巴特沃斯低通、高斯低通的振铃效应
 2. 实现同态滤波（`Homomorphic Filtering`）进行光照校正
 3. 将频域高通滤波与 `Sobel`边缘检测结果对比
+
+------
+
+## 任务一：灰度图像频域变换与滤波
+
+1. [问题建模与理论方法](html/must_do/task1_freq_filter.html.html)
+2. [程序实现](task1_freq_filter.py)
+3. [效果预览](output/frequency_filtering_result.png)
+
+------
+
+## 任务二：差分滤波器设计
+
+1. [问题建模与理论方法](html/must_do/task2_diff_filter.html)
+2. [程序实现](task2_diff_filter.py)
+3. [效果预览](output/differential_filter_result.png)
