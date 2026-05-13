@@ -1,0 +1,584 @@
+<!--
+ * @Author: NaoMenDDD 2017954808@qq.com
+ * @Date: 2026-05-13 10:42:57
+ * @LastEditors: NaoMenDDD 2017954808@qq.com
+ * @LastEditTime: 2026-05-13 12:04:12
+ * @Description: 扩展任务一：振铃效应对比 - 问题建模与理论方法
+ * 
+ * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
+-->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扩展任务一：振铃效应对比 - 问题建模与理论方法</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f5f5f7;
+            --text: #1d1d1f;
+            --text-secondary: #515154;
+            --text-tertiary: #86868b;
+            --accent: #3b8c6e;
+            --accent-light: #e8f5ef;
+            --accent-dark: #2a6b52;
+            --border: #d2d2d7;
+            --border-light: #e5e5ea;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+            --radius-xl: 24px;
+            --transition: 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+            --transition-fast: 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --font-math: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+            --color-ideal: #c76b3d;
+            --color-butter: #3b6db5;
+            --color-gauss: #3b8c6e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 1000;
+            transition: width 0.1s linear;
+            width: 0;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 30px 100px;
+        }
+
+        .section {
+            margin-bottom: 100px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 40px 0 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+        }
+
+        .hero.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero .tag {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #1d1d1f 0%, #2a5a40 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            padding: 40px 44px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            border-color: #c5c5cc;
+        }
+
+        .card h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card h2 .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .equation {
+            font-family: var(--font-math);
+            font-size: 1rem;
+            background: #ffffff;
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            margin: 12px 0;
+            border-left: 3px solid var(--accent);
+            overflow-x: auto;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            color: #2c2c30;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .eq-caption {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+            margin-top: -6px;
+            margin-bottom: 12px;
+            padding-left: 24px;
+            font-weight: 500;
+        }
+
+        .knowledge-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 4px 12px;
+            border-radius: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+        }
+
+        .knowledge-badge::before {
+            content: '📘';
+            font-size: 0.85rem;
+        }
+
+        .canvas-wrapper {
+            background: #ffffff;
+            border-radius: var(--radius);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .canvas-caption {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .chart-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .compare-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 0;
+            margin: 20px 0;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            font-size: 0.85rem;
+        }
+
+        .compare-table .th {
+            background: #1d1d1f;
+            color: #fff;
+            padding: 12px 16px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .compare-table .td {
+            background: #ffffff;
+            padding: 12px 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-secondary);
+        }
+
+        .compare-table .td:first-child {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-top: 80px;
+            padding: 20px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 16px 60px;
+            }
+
+            .hero h1 {
+                font-size: 1.7rem;
+            }
+
+            .card {
+                padding: 24px 20px;
+            }
+
+            .compare-table {
+                font-size: 0.7rem;
+            }
+
+            .compare-table .th,
+            .compare-table .td {
+                padding: 8px 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="container">
+        <div class="hero" id="hero">
+            <span class="tag">信号与系统 · 课设 · 扩展</span>
+            <h1>扩展任务一：低通滤波器振铃效应对比</h1>
+            <p class="subtitle">对比理想低通、巴特沃斯低通、高斯低通三种滤波器的振铃效应，分析频域截断特性与空域伪影的关系</p>
+        </div>
+
+        <!-- 第一节：三种滤波器的传递函数 -->
+        <div class="section" id="section1">
+            <div class="card">
+                <h2><span class="num">1</span> 问题建模：三种低通滤波器的数学定义</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                    振铃效应的根源在于频域的<strong>陡峭截断</strong>。不同滤波器对高频的衰减方式决定了空域是否产生虚假波纹。</p>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+                    <!-- 理想低通 -->
+                    <div
+                        style="background:#fff; border-radius:var(--radius); padding:20px; border-left: 3px solid var(--color-ideal);">
+                        <h3 style="color:var(--color-ideal); margin-bottom:10px;">理想低通 (ILPF)</h3>
+                        <div class="equation" style="border-left-color:var(--color-ideal); font-size:0.9rem;">
+                            H(u,v) = { 1, D≤D₀ ; 0, D>D₀ }
+                        </div>
+                        <p style="font-size:0.82rem; color:var(--text-secondary);">频域<strong>硬截断</strong>，对应空域sinc函数卷积 →
+                            <strong style="color:var(--color-ideal);">振铃严重</strong>
+                        </p>
+                    </div>
+                    <!-- 巴特沃斯低通 -->
+                    <div
+                        style="background:#fff; border-radius:var(--radius); padding:20px; border-left: 3px solid var(--color-butter);">
+                        <h3 style="color:var(--color-butter); margin-bottom:10px;">巴特沃斯低通 (BLPF)</h3>
+                        <div class="equation" style="border-left-color:var(--color-butter); font-size:0.9rem;">
+                            H(u,v) = 1 / [1 + (D/D₀)<sup>2n</sup>]
+                        </div>
+                        <p style="font-size:0.82rem; color:var(--text-secondary);">n阶平滑过渡，n越大越接近理想 → <strong
+                                style="color:var(--color-butter);">振铃可控</strong></p>
+                    </div>
+                    <!-- 高斯低通 -->
+                    <div
+                        style="background:#fff; border-radius:var(--radius); padding:20px; border-left: 3px solid var(--color-gauss);">
+                        <h3 style="color:var(--color-gauss); margin-bottom:10px;">高斯低通 (GLPF)</h3>
+                        <div class="equation" style="border-left-color:var(--color-gauss); font-size:0.9rem;">
+                            H(u,v) = exp[ −D² / (2·D₀²) ]
+                        </div>
+                        <p style="font-size:0.82rem; color:var(--text-secondary);">完全平滑衰减，无旁瓣 → <strong
+                                style="color:var(--color-gauss);">无振铃</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二节：频率响应曲线对比 -->
+        <div class="section" id="section2">
+            <div class="card">
+                <h2><span class="num">2</span> 理论方法：频率响应曲线与振铃机制</h2>
+                <div class="chart-row">
+                    <div class="canvas-wrapper">
+                        <canvas id="freqRespCanvas" width="400" height="280"></canvas>
+                        <div class="canvas-caption">三种滤波器的径向频率响应曲线</div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="impulseRespCanvas" width="400" height="280"></canvas>
+                        <div class="canvas-caption">对应的空域冲激响应 (振铃可视化)</div>
+                    </div>
+                </div>
+                <div style="margin-top:20px;">
+                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">振铃效应产生的物理机制</h3>
+                    <p style="color:var(--text-secondary);">
+                        <strong>吉布斯现象：</strong>当频域存在<strong>不连续点</strong>（理想低通的硬截断），其傅里叶逆变换（空域冲激响应）会产生无限振荡的sinc函数旁瓣。
+                        这些旁瓣在卷积时会在图像边缘附近产生<strong>虚假的明暗波纹</strong>——即振铃效应。
+                        巴特沃斯滤波器的平滑过渡可抑制旁瓣幅度，高斯滤波器因无限光滑而完全消除振铃。
+                    </p>
+                    <span class="knowledge-badge">吉布斯现象 · 第4章</span>
+                    <span class="knowledge-badge">滤波器设计 · 第6章</span>
+                    <span class="knowledge-badge">冲激响应与卷积</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三节：综合对比 -->
+        <div class="section" id="section3">
+            <div class="card">
+                <h2><span class="num">3</span> 综合对比：振铃程度与滤波效果</h2>
+                <div class="compare-table">
+                    <div class="th">滤波器类型</div>
+                    <div class="th">频域过渡</div>
+                    <div class="th">振铃程度</div>
+                    <div class="th">平滑效果</div>
+                    <div class="td">理想低通 (ILPF)</div>
+                    <div class="td">阶跃截断</div>
+                    <div class="td" style="color:var(--color-ideal); font-weight:700;">严重 ⬤⬤⬤</div>
+                    <div class="td">锐利但带伪影</div>
+                    <div class="td">巴特沃斯 (BLPF)</div>
+                    <div class="td">n阶平滑</div>
+                    <div class="td" style="color:var(--color-butter); font-weight:700;">中等 ⬤⬤</div>
+                    <div class="td">n=1平滑，n=4近理想</div>
+                    <div class="td">高斯低通 (GLPF)</div>
+                    <div class="td">无限光滑</div>
+                    <div class="td" style="color:var(--color-gauss); font-weight:700;">无 ⬤</div>
+                    <div class="td">最柔和，无伪影</div>
+                </div>
+                <p style="color:var(--text-secondary); margin-top:16px;">
+                    <strong>结论：</strong>高斯低通振铃为零但平滑最重；理想低通边缘保留最好但振铃不可接受；巴特沃斯是两者的折中——调节阶数 n 可在锐度和振铃之间取得平衡。
+                </p>
+                <span class="knowledge-badge">频率响应分析</span>
+                <span class="knowledge-badge">吉布斯现象抑制</span>
+            </div>
+        </div>
+        <div class="footer-note">
+            信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 振铃效应对比 · 问题建模与理论方法
+        </div>
+    </div>
+    <script>
+        (() => {
+            const progressBar = document.getElementById('progressBar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                progressBar.style.width = (scrollTop / docHeight) * 100 + '%';
+            });
+            const sections = document.querySelectorAll('.section');
+            const hero = document.getElementById('hero');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+            }, { rootMargin: '0px 0px -60px 0px', threshold: 0.15 });
+            sections.forEach(s => observer.observe(s));
+            const heroObs = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+            }, { threshold: 0.2 });
+            heroObs.observe(hero);
+
+            // 频率响应曲线对比
+            function drawFreqResp() {
+                const canvas = document.getElementById('freqRespCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                const padL = 55, padR = 25, padT = 48, padB = 40;
+                const plotW = w - padL - padR, plotH = h - padT - padB;
+                const legendY = 18;
+                // 坐标轴
+                ctx.strokeStyle = '#d2d2d7';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, padT);
+                ctx.lineTo(padL, padT + plotH);
+                ctx.lineTo(padL + plotW, padT + plotH);
+                ctx.stroke();
+                ctx.fillStyle = '#86868b';
+                ctx.font = '11px -apple-system, sans-serif';
+                ctx.fillText('频率 D →', padL + plotW / 2, padT + plotH + 28);
+                ctx.fillText('增益', padL - 40, padT + plotH / 2);
+                // 三条曲线
+                const D0 = 0.35;
+                function drawCurve(points, color, dash) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2.5;
+                    if (dash) ctx.setLineDash([6, 3]);
+                    else ctx.setLineDash([]);
+                    points.forEach((pt, i) => {
+                        const sx = padL + pt[0] * plotW;
+                        const sy = padT + (1 - pt[1]) * plotH;
+                        if (i === 0) ctx.moveTo(sx, sy);
+                        else ctx.lineTo(sx, sy);
+                    });
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                const ptsIdeal = [[0, 1], [D0 - 0.002, 1], [D0, 0], [D0 + 0.002, 0], [1, 0]];
+                const ptsButter = [];
+                const ptsGauss = [];
+                for (let i = 0; i <= 100; i++) {
+                    const d = i / 100;
+                    ptsButter.push([d, 1 / (1 + Math.pow(d / D0, 4))]);
+                    ptsGauss.push([d, Math.exp(-d * d / (2 * D0 * D0))]);
+                }
+                drawCurve(ptsIdeal, '#c76b3d', true);
+                drawCurve(ptsButter, '#3b6db5', false);
+                drawCurve(ptsGauss, '#3b8c6e', false);
+                // 图例
+                ctx.fillStyle = '#c76b3d';
+                ctx.fillRect(padL + 10, legendY, 16, 3);
+                ctx.fillText('理想', padL + 30, legendY + 5);
+                ctx.fillStyle = '#3b6db5';
+                ctx.fillRect(padL + 80, legendY, 16, 3);
+                ctx.fillText('巴特沃斯', padL + 100, legendY + 5);
+                ctx.fillStyle = '#3b8c6e';
+                ctx.fillRect(padL + 180, legendY, 16, 3);
+                ctx.fillText('高斯', padL + 200, legendY + 5);
+                // 标记截止频率
+                const cutoffX = padL + D0 * plotW;
+                ctx.setLineDash([3, 5]);
+                ctx.strokeStyle = '#86868b';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(cutoffX, padT);
+                ctx.lineTo(cutoffX, padT + plotH);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#86868b';
+                ctx.fillText('D₀', cutoffX + 4, padT + 16);
+            }
+
+            // 冲激响应对比
+            function drawImpulseResp() {
+                const canvas = document.getElementById('impulseRespCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                const padL = 55, padR = 25, padT = 48, padB = 40;
+                const plotW = w - padL - padR, plotH = h - padT - padB;
+                const cx = padL + plotW / 2;
+                const zeroY = padT + plotH * 0.7;
+                const legendY = 18;
+                // 坐标轴
+                ctx.strokeStyle = '#d2d2d7';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, zeroY);
+                ctx.lineTo(padL + plotW, zeroY);
+                ctx.moveTo(cx, padT);
+                ctx.lineTo(cx, padT + plotH);
+                ctx.stroke();
+                ctx.fillStyle = '#86868b';
+                ctx.font = '11px -apple-system, sans-serif';
+                ctx.fillText('空间坐标 x →', padL + plotW / 2, padT + plotH + 28);
+                ctx.fillText('幅度', padL - 30, padT + plotH / 2);
+                // 模拟冲激响应
+                function drawImpulse(color, oscillations, decay, dash) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    if (dash) ctx.setLineDash([5, 3]);
+                    else ctx.setLineDash([]);
+                    for (let i = 0; i <= 200; i++) {
+                        const dx = (i / 200 - 0.5) * 6;
+                        let amp;
+                        if (Math.abs(dx) < 0.03) amp = 1;
+                        else amp = Math.sin(oscillations * dx) / (oscillations * dx) * Math.exp(-decay * Math.abs(dx));
+                        const sx = padL + (i / 200) * plotW;
+                        const sy = zeroY - amp * plotH * 0.4;
+                        if (i === 0) ctx.moveTo(sx, sy);
+                        else ctx.lineTo(sx, sy);
+                    }
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                drawImpulse('#c76b3d', 18, 0.1, true);
+                drawImpulse('#3b6db5', 14, 0.6, false);
+                drawImpulse('#3b8c6e', 8, 1.5, false);
+                ctx.fillStyle = '#c76b3d';
+                ctx.fillRect(padL + 10, legendY, 16, 3);
+                ctx.fillText('理想 (振荡)', padL + 30, legendY + 5);
+                ctx.fillStyle = '#3b6db5';
+                ctx.fillRect(padL + 120, legendY, 16, 3);
+                ctx.fillText('巴特沃斯', padL + 140, legendY + 5);
+                ctx.fillStyle = '#3b8c6e';
+                ctx.fillRect(padL + 230, legendY, 16, 3);
+                ctx.fillText('高斯 (无振铃)', padL + 250, legendY + 5);
+            }
+
+            setTimeout(() => { drawFreqResp(); drawImpulseResp(); }, 400);
+            window.addEventListener('resize', () => { drawFreqResp(); drawImpulseResp(); });
+        })();
+    </script>
+</body>
+
+</html>
