@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-13 21:48:07
+LastEditTime: 2026-05-14 09:01:31
 Description: 任务1：频域滤波
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -187,11 +187,9 @@ def main(input_image_path, output_dir="output", show_output=False):
     magnitude_hp_viz = visualize_log_spectrum(magnitude_hp_log)
 
     # ----- 6. 生成流程图式布局 -----
-    # 临时关闭交互绘图，避免原始 fig 在保存阶段弹窗
     was_interactive = plt.isinteractive()
     plt.ioff()
     fig = plt.figure(figsize=(26, 13.0), facecolor='white')
-    # 调整网格参数使整体视觉舒适
     gs = fig.add_gridspec(3, 5, hspace=0.20, wspace=0.12,
                           width_ratios=[0.55, 1.05, 1.15, 1.05, 1.05],
                           left=0.03, right=0.985, top=0.88, bottom=0.24)

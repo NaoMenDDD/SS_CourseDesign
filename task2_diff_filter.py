@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 22:00:41
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-14 08:43:41
+LastEditTime: 2026-05-14 09:02:53
 Description: 任务二：频域差分滤波器 - 二维一阶差分（梯度）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -146,7 +146,6 @@ def main(input_image_path, output_dir="output", show_output=False):
     filter_response, filter_log = visualize_filter_response(H_x)
 
     # ----- 7. 生成组合结果图（奥运五环式错位布局）-----
-    # 临时关闭交互绘图，避免原始 fig 在保存阶段弹窗
     was_interactive = plt.isinteractive()
     plt.ioff()
     fig = plt.figure(figsize=(18, 10), facecolor='white')
@@ -187,7 +186,6 @@ def main(input_image_path, output_dir="output", show_output=False):
     im = ax_filter.imshow(filter_response, cmap='hot')
     ax_filter.set_title("Frequency Response\n|H_diff(u,v)|", fontsize=13, fontweight='medium', pad=6)
     ax_filter.axis('off')
-    # 添加水平颜色条
     cbar = fig.colorbar(im, ax=ax_filter, orientation='horizontal', fraction=0.05, pad=0.03)
     cbar.set_label('Gain (normalized log scale)', fontsize=9)
 
