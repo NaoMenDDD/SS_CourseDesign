@@ -109,3 +109,24 @@
 
 ------
 
+## 配置环境
+
+1. 新建虚拟环境
+
+   ```bash
+   python3 -m venv .venv
+   ```
+
+   激活环境
+
+   ```bash
+   source .venv/bin/activate
+   ```
+
+2. 安装依赖
+
+   ```bash
+   pip install numpy matplotlib opencv-python scipy
+   ```
+
+   
