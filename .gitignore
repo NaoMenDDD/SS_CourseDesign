@@ -1,1 +1,11 @@
-__pycache__
+.venv/*
+!.venv/pyvenv.cfg
+!.venv/bin/
+!.venv/bin/**
+!.venv/lib/
+!.venv/lib/**
+!.venv/lib64/
+!.venv/lib64/**
+**/__pycache__/
+**/*.py[cod]
+
