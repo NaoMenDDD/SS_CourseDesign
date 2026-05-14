@@ -190,11 +190,11 @@ def main(input_image_path, output_dir="output", show_output=False):
     # 临时关闭交互绘图，避免原始 fig 在保存阶段弹窗
     was_interactive = plt.isinteractive()
     plt.ioff()
-    fig = plt.figure(figsize=(26, 12), facecolor='white')
+    fig = plt.figure(figsize=(26, 13.0), facecolor='white')
     # 调整网格参数使整体视觉舒适
     gs = fig.add_gridspec(3, 5, hspace=0.20, wspace=0.12,
                           width_ratios=[0.55, 1.05, 1.15, 1.05, 1.05],
-                          left=0.03, right=0.985, top=0.88, bottom=0.15)
+                          left=0.03, right=0.985, top=0.88, bottom=0.24)
 
     ax_original = fig.add_subplot(gs[1, 1])       # Original Image
     ax_original_spec = fig.add_subplot(gs[1, 2])  # Original Spectrum (log)
@@ -204,6 +204,13 @@ def main(input_image_path, output_dir="output", show_output=False):
 
     ax_lp_spec = fig.add_subplot(gs[2, 3])        # Low-Pass Filtered Spectrum
     ax_lp_img = fig.add_subplot(gs[2, 4])         # Low-Pass Filtered Image
+
+    ax_hp_img.text(0.5, -0.04, "High-pass filtering suppresses smooth regions\nand keeps fine details and edges.",
+                   transform=ax_hp_img.transAxes, ha='center', va='top', fontsize=9,
+                   color='#5c5c5f', wrap=True, clip_on=False)
+    ax_lp_img.text(0.5, -0.04, "Low-pass filtering removes high-frequency detail\nand keeps the image smoother.",
+                   transform=ax_lp_img.transAxes, ha='center', va='top', fontsize=9,
+                   color='#5c5c5f', wrap=True, clip_on=False)
 
     # 将所有图像转为 uint8 以便 imshow
     images = [img, magnitude_viz, magnitude_lp_viz, img_lp, magnitude_hp_viz, img_hp]
