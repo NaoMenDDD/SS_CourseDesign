@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-14 16:36:28
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-15 09:39:09
+LastEditTime: 2026-05-15 10:29:04
 Description: 扩展任务三：频域高通滤波 vs Sobel vs Canny 边缘检测对比
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -259,17 +259,23 @@ def main(input_image_path, output_dir="output", filter_type="ideal", canny_low=N
     # 频域高通滤波结果
     ax_hp.imshow(img_hp, cmap='gray')
     ax_hp.set_title(f"Frequency Domain {filter_name}\nD₀={D0:.1f}px", fontsize=11, fontweight='medium')
+    ax_hp.text(0.5, -0.05, "Highpass enhances edges globally", transform=ax_hp.transAxes,
+               fontsize=10.5, ha='center', color='#8e8e93', style='italic')
     ax_hp.axis('off')
 
     # Sobel 边缘检测结果
     ax_sobel.imshow(img_sobel, cmap='gray')
     ax_sobel.set_title("Sobel (Gradient Magnitude)", fontsize=11, fontweight='medium')
+    ax_sobel.text(0.5, -0.05, "Sobel gives thick gradient", transform=ax_sobel.transAxes,
+                  fontsize=10.5, ha='center', color='#8e8e93', style='italic')
     ax_sobel.axis('off')
 
     # Canny 边缘检测结果
     ax_canny.imshow(img_canny, cmap='gray')
     canny_param = f"auto (median={np.median(img_uint8):.0f})" if (canny_low is None) else f"low={canny_low}, high={canny_high}"
     ax_canny.set_title(f"Canny Edge Detection\n{canny_param}", fontsize=11, fontweight='medium')
+    ax_canny.text(0.5, -0.05, "Canny produces thin, accurate edges", transform=ax_canny.transAxes,
+                  fontsize=10.5, ha='center', color='#8e8e93', style='italic')
     ax_canny.axis('off')
 
     # 方法对比说明文本
@@ -285,15 +291,13 @@ def main(input_image_path, output_dir="output", filter_type="ideal", canny_low=N
                    bbox=dict(boxstyle="round,pad=0.4", facecolor='#f2f2f6', edgecolor='none'))
 
     fig.suptitle("Comparison: Frequency Domain Highpass vs. Sobel vs. Canny", fontsize=16, fontweight='semibold', y=0.94)
-    fig.text(0.5, 0.03, "Highpass enhances edges globally; Sobel gives thick gradient; Canny produces thin, accurate edges.",
-             fontsize=9, ha='center', color='#8e8e93', style='italic')
 
     # ----- 6. 保存结果 -----
     output_path = os.path.join(output_dir, "hpf_vs_sobel_vs_canny.png")
     plt.savefig(output_path, bbox_inches='tight', pad_inches=0.28, facecolor='white', dpi=200)
     plt.close(fig)
 
-    # ----- 7. 可选：显示结果 -----
+    # ----- 7. 显示结果 -----
     if show_output:
         saved = cv2.imread(output_path, cv2.IMREAD_COLOR)
         if saved is not None:
