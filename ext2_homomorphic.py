@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-14 09:16:51
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-14 16:41:32
+LastEditTime: 2026-05-15 09:07:59
 Description: 扩展任务二：同态滤波光照校正 - 频域增强（自适应截止频率）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -61,12 +61,12 @@ def compute_fft_spectrum(img):
     return fshift, magnitude_log, magnitude_linear
 
 
-def compute_cutoff_frequency(fft_shifted, energy_percent=0.90):
+def compute_cutoff_frequency(fft_shifted, energy_percent=0.85):
     """
     根据径向能量累计比例计算截止频率（半径，单位：像素）
     参数：
         fft_shifted: 频移后的复数频谱
-        energy_percent: 累计能量占比阈值，默认0.90（90%）
+        energy_percent: 累计能量占比阈值
     返回：
         cutoff_radius: 截止频率对应的半径（浮点数）
     """

@@ -93,19 +93,37 @@
 
 ------
 
-## 任务一：灰度图像频域变换与滤波
+## 任务实现
+
+### 任务一：灰度图像频域变换与滤波
 
 1. [问题建模与理论方法](html/must_do/task1_freq_filter.html.html)
 2. [程序实现](task1_freq_filter.py)
 3. [效果预览](output/frequency_filtering_result.png)
 
-------
-
-## 任务二：差分滤波器设计
+### 任务二：差分滤波器设计
 
 1. [问题建模与理论方法](html/must_do/task2_diff_filter.html)
 2. [程序实现](task2_diff_filter.py)
 3. [效果预览](output/differential_filter_result.png)
+
+### 扩展任务一：*对比理想低通、巴特沃斯低通、高斯低通的振铃效应*
+
+1. [问题建模与理论方法](html/extension/ext1_ringing.html)
+2. [程序实现](ext1_ringing.py)
+3. [效果预览](output/ringing_comparison.png)
+
+### 扩展任务二：同态滤波光照校正 - 频域增强
+
+1. [问题建模与理论方法](html/extension/ext2_homomorphic.html)
+2. [程序实现](ext2_homomorphic.py)
+3. [效果预览](output/homomorphic_filtering_result.png)
+
+### 扩展任务三：频域高通滤波 vs Sobel vs Canny 边缘检测对比
+
+1. [问题建模与理论方法](html/extension/ext3_sobel_compare.html)
+2. [程序实现](ext3_sobel_compare.py)
+3. [效果预览](output/hpf_vs_sobel_vs_canny.png)
 
 ------
 
