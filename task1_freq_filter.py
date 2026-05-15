@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-14 09:01:31
+LastEditTime: 2026-05-15 10:32:12
 Description: 任务1：频域滤波
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -203,12 +203,10 @@ def main(input_image_path, output_dir="output", show_output=False):
     ax_lp_spec = fig.add_subplot(gs[2, 3])        # Low-Pass Filtered Spectrum
     ax_lp_img = fig.add_subplot(gs[2, 4])         # Low-Pass Filtered Image
 
-    ax_hp_img.text(0.5, -0.04, "High-pass filtering suppresses smooth regions\nand keeps fine details and edges.",
-                   transform=ax_hp_img.transAxes, ha='center', va='top', fontsize=9,
-                   color='#5c5c5f', wrap=True, clip_on=False)
-    ax_lp_img.text(0.5, -0.04, "Low-pass filtering removes high-frequency detail\nand keeps the image smoother.",
-                   transform=ax_lp_img.transAxes, ha='center', va='top', fontsize=9,
-                   color='#5c5c5f', wrap=True, clip_on=False)
+    ax_hp_img.text(0.5, -0.13, "High-pass filtering suppresses smooth regions\nand keeps fine details and edges.",
+                   transform=ax_hp_img.transAxes, ha='center', fontsize=10.5, color='#5c5c5f',  style='italic')
+    ax_lp_img.text(0.5, -0.13, "Low-pass filtering removes high-frequency detail\nand keeps the image smoother.",
+                   transform=ax_lp_img.transAxes, ha='center', fontsize=10.5, color='#5c5c5f',  style='italic')
 
     # 将所有图像转为 uint8 以便 imshow
     images = [img, magnitude_viz, magnitude_lp_viz, img_lp, magnitude_hp_viz, img_hp]
@@ -244,7 +242,7 @@ def main(input_image_path, output_dir="output", show_output=False):
         ax.axis('off')
 
     fig.suptitle("Frequency Domain Filtering Pipeline", fontsize=24, fontweight='semibold', 
-                 x=0.4, y=0.94, color='#1c1c1e')
+                 x=0.57, y=0.94, color='#1c1c1e')
     fig.canvas.draw()
 
     # ------------------- 辅助函数：获取轴边缘坐标（相对 figure 坐标） -------------------
@@ -298,7 +296,7 @@ def main(input_image_path, output_dir="output", show_output=False):
     # 标注截止频率（放置在原始频谱下方）
     cutoff_text = f"Cutoff Frequency D₀ = {D0:.1f} px\n(95% energy accumulation)"
     ax_original_spec.text(
-        0.48, -0.30, cutoff_text,
+        0.48, -0.20, cutoff_text,
         transform=ax_original_spec.transAxes,
         fontsize=12, ha='center', va='bottom', color='#1c1c1e',
         bbox=dict(boxstyle="round,pad=0.35", facecolor='#f2f2f6', edgecolor='#d1d1d6', alpha=1.0),

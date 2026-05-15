@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 22:00:41
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-14 09:02:53
+LastEditTime: 2026-05-15 10:33:58
 Description: 任务二：频域差分滤波器 - 二维一阶差分（梯度）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -163,23 +163,20 @@ def main(input_image_path, output_dir="output", show_output=False):
 
     ax_grad_x.imshow(grad_x_norm, cmap='gray')
     ax_grad_x.set_title("Horizontal Gradient\n(∂f/∂x)", fontsize=13, fontweight='medium', pad=6)
-    ax_grad_x.text(0.5, -0.04, "First-order difference along x highlights vertical edges.",
-                   transform=ax_grad_x.transAxes, ha='center', va='top', fontsize=9,
-                   color='#5c5c5f', wrap=True, clip_on=False)
+    ax_grad_x.text(0.5, -0.06, "First-order difference along x highlights vertical edges.",
+                   transform=ax_grad_x.transAxes, ha='center', fontsize=10.5, color='#8e8e93', style='italic')
     ax_grad_x.axis('off')
 
     ax_grad_y.imshow(grad_y_norm, cmap='gray')
     ax_grad_y.set_title("Vertical Gradient\n(∂f/∂y)", fontsize=13, fontweight='medium', pad=6)
-    ax_grad_y.text(0.5, -0.04, "First-order difference along y highlights horizontal edges.",
-                   transform=ax_grad_y.transAxes, ha='center', va='top', fontsize=9,
-                   color='#5c5c5f', wrap=True, clip_on=False)
+    ax_grad_y.text(0.5, -0.06, "First-order difference along y highlights horizontal edges.",
+                   transform=ax_grad_y.transAxes, ha='center', fontsize=10.5, color='#8e8e93', style='italic')
     ax_grad_y.axis('off')
 
     ax_mag.imshow(grad_mag_norm, cmap='gray')
     ax_mag.set_title("Gradient Magnitude\n|∇f|", fontsize=13, fontweight='medium', pad=6)
-    ax_mag.text(0.5, -0.04, "Combines both directions of change; stronger edges produce larger values.",
-                transform=ax_mag.transAxes, ha='center', va='top', fontsize=9,
-                color='#5c5c5f', wrap=True, clip_on=False)
+    ax_mag.text(0.5, -0.06, "Combines both directions of change; stronger edges produce larger values.",
+                transform=ax_mag.transAxes, ha='center', fontsize=10.5, color='#8e8e93', style='italic')
     ax_mag.axis('off')
 
     # 频率响应带颜色条
@@ -187,7 +184,7 @@ def main(input_image_path, output_dir="output", show_output=False):
     ax_filter.set_title("Frequency Response\n|H_diff(u,v)|", fontsize=13, fontweight='medium', pad=6)
     ax_filter.axis('off')
     cbar = fig.colorbar(im, ax=ax_filter, orientation='horizontal', fraction=0.05, pad=0.03)
-    cbar.set_label('Gain (normalized log scale)', fontsize=9)
+    cbar.set_label('Gain (normalized log scale)', fontsize=10.5)
 
     # 总标题
     fig.suptitle("Frequency Domain Differential Filter (First-Order Difference)", 
