@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-15 10:32:12
+LastEditTime: 2026-05-15 10:48:20
 Description: 任务1：频域滤波
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -190,9 +190,10 @@ def main(input_image_path, output_dir="output", show_output=False):
     was_interactive = plt.isinteractive()
     plt.ioff()
     fig = plt.figure(figsize=(26, 13.0), facecolor='white')
+    # 参考 ext3 的标题布局，减小上方留白以避免过多空白
     gs = fig.add_gridspec(3, 5, hspace=0.20, wspace=0.12,
                           width_ratios=[0.55, 1.05, 1.15, 1.05, 1.05],
-                          left=0.03, right=0.985, top=0.88, bottom=0.24)
+                          left=0.02, right=0.98, top=0.86, bottom=0.24)
 
     ax_original = fig.add_subplot(gs[1, 1])       # Original Image
     ax_original_spec = fig.add_subplot(gs[1, 2])  # Original Spectrum (log)
@@ -241,11 +242,11 @@ def main(input_image_path, output_dir="output", show_output=False):
         ax.set_title(title, fontsize=13, fontweight='medium', pad=8)
         ax.axis('off')
 
-    fig.suptitle("Frequency Domain Filtering Pipeline", fontsize=24, fontweight='semibold', 
-                 x=0.57, y=0.94, color='#1c1c1e')
+    # 将主标题居中，位置参考 ext3 的处理（稍靠下以减少顶部空白）
+    fig.suptitle("Frequency Domain Filtering Pipeline", fontsize=24, fontweight='semibold',
+                 x=0.57, y=0.93, ha='center', color='#1c1c1e')
     fig.canvas.draw()
 
-    # ------------------- 辅助函数：获取轴边缘坐标（相对 figure 坐标） -------------------
     def _right_center(ax):
         bbox = ax.get_position()
         return bbox.x1, bbox.y0 + bbox.height / 2
@@ -305,7 +306,7 @@ def main(input_image_path, output_dir="output", show_output=False):
 
     # 保存组合图像
     output_path = os.path.join(output_dir, "frequency_filtering_result.png")
-    plt.savefig(output_path, bbox_inches='tight', facecolor='white', dpi=200)
+    plt.savefig(output_path, bbox_inches='tight', pad_inches=0.28, facecolor='white', dpi=200)
     plt.close(fig)
     if was_interactive:
         plt.ion()

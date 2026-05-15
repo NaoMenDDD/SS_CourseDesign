@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 22:00:41
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-15 10:33:58
+LastEditTime: 2026-05-15 10:45:16
 Description: 任务二：频域差分滤波器 - 二维一阶差分（梯度）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -150,11 +150,11 @@ def main(input_image_path, output_dir="output", show_output=False):
     plt.ioff()
     fig = plt.figure(figsize=(18, 10), facecolor='white')
 
-    ax_original = fig.add_axes([0.03, 0.525, 0.28, 0.34])
-    ax_grad_x   = fig.add_axes([0.335, 0.525, 0.28, 0.34])
-    ax_grad_y   = fig.add_axes([0.64, 0.525, 0.28, 0.34])
-    ax_mag      = fig.add_axes([0.145, 0.095, 0.28, 0.34])
-    ax_filter   = fig.add_axes([0.485, 0.095, 0.28, 0.34])
+    ax_original = fig.add_axes([0.03, 0.510, 0.28, 0.34])
+    ax_grad_x   = fig.add_axes([0.335, 0.510, 0.28, 0.34])
+    ax_grad_y   = fig.add_axes([0.64, 0.510, 0.28, 0.34])
+    ax_mag      = fig.add_axes([0.145, 0.080, 0.28, 0.34])
+    ax_filter   = fig.add_axes([0.485, 0.080, 0.28, 0.34])
 
     # 显示图像
     ax_original.imshow(img_disp, cmap='gray')
@@ -187,12 +187,13 @@ def main(input_image_path, output_dir="output", show_output=False):
     cbar.set_label('Gain (normalized log scale)', fontsize=10.5)
 
     # 总标题
-    fig.suptitle("Frequency Domain Differential Filter (First-Order Difference)", 
-                 fontsize=20, fontweight='semibold', x=0.5, y=0.96, color='#1c1c1e')
+    # 参考 ext3 的标题处理：减少顶部留白并让主标题位置更自然
+    fig.suptitle("Frequency Domain Differential Filter (First-Order Difference)",
+                 fontsize=20, fontweight='semibold', x=0.5, y=0.94, color='#1c1c1e')
 
     # 保存组合图
     output_combined = os.path.join(output_dir, "differential_filter_result.png")
-    plt.savefig(output_combined, bbox_inches='tight', facecolor='white', dpi=200)
+    plt.savefig(output_combined, bbox_inches='tight', pad_inches=0.28, facecolor='white', dpi=200)
     plt.close(fig)
     if was_interactive:
         plt.ion()
