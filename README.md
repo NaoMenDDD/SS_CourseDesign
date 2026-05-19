@@ -124,6 +124,7 @@
 1. [问题建模与理论方法](html/extension/ext3_sobel_compare.html)
 2. [程序实现](ext3_sobel_compare.py)
 3. [效果预览](output/hpf_vs_sobel_vs_canny.png)
+4. 
 
 ------
 

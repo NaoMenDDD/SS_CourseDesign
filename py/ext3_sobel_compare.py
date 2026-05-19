@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-14 16:36:28
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-15 10:29:04
+LastEditTime: 2026-05-19 17:09:16
 Description: 扩展任务三：频域高通滤波 vs Sobel vs Canny 边缘检测对比
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -174,7 +174,7 @@ def canny_edge_detection(img_uint8, low_threshold=None, high_threshold=None):
         二值边缘图（uint8）
     """
     if low_threshold is None or high_threshold is None:
-        # 自动阈值计算：基于中位数
+        # 自动阈值计算
         sigma = 0.33
         v = np.median(img_uint8)
         low = int(max(0, (1.0 - sigma) * v))
@@ -311,8 +311,8 @@ def main(input_image_path, output_dir="output", filter_type="ideal", canny_low=N
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="扩展任务三增强版：频域高通滤波 vs Sobel vs Canny 边缘检测")
-    parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
+    parser = argparse.ArgumentParser(description="扩展任务三延伸：频域高通滤波 vs Sobel vs Canny 边缘检测")
+    parser.add_argument("--input", "-i", type=str, default="../img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录")
@@ -326,7 +326,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
-        img_folder = Path("img")
+        img_folder = Path("../img")
         if img_folder.exists():
             imgs = list(img_folder.glob("*.bmp")) + list(img_folder.glob("*.jpg")) + list(img_folder.glob("*.png"))
             if imgs:

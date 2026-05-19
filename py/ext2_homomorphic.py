@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-14 09:16:51
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-15 09:07:59
+LastEditTime: 2026-05-19 17:09:47
 Description: 扩展任务二：同态滤波光照校正 - 频域增强（自适应截止频率）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -272,8 +272,8 @@ def main(input_image_path, output_dir="output", gamma_l=0.8, gamma_h=2.0, c=1.0,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="扩展任务二：同态滤波光照校正 - 频域增强（自适应截止频率）")
-    parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
-                        help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
+    parser.add_argument("--input", "-i", type=str, default="../img/house.bmp",
+                        help="输入图像路径（支持 .bmp .jpg .png），默认 ../img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录，默认为 output")
     parser.add_argument("--gamma_l", type=float, default=0.8,
@@ -288,7 +288,7 @@ if __name__ == "__main__":
 
     # 检查默认路径
     if not os.path.exists(args.input):
-        img_folder = Path("img")
+        img_folder = Path("../img")
         if img_folder.exists() and img_folder.is_dir():
             images_found = list(img_folder.glob("*.bmp")) + list(img_folder.glob("*.jpg")) + list(img_folder.glob("*.png"))
             if images_found:

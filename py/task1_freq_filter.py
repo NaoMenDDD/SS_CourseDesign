@@ -2,10 +2,8 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-15 10:48:20
+LastEditTime: 2026-05-19 17:09:06
 Description: 任务1：频域滤波
-
-Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
 '''
 
 import argparse
@@ -61,7 +59,7 @@ def compute_fft_spectrum(img):
     return fshift, magnitude_log, magnitude_linear
 
 
-def compute_cutoff_frequency(fft_shifted, energy_percent=0.95):
+def compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95):
     """
     根据径向能量累计比例计算截止频率（半径，单位：像素）
     参数：
@@ -69,6 +67,7 @@ def compute_cutoff_frequency(fft_shifted, energy_percent=0.95):
         energy_percent: 累计能量占比阈值，默认0.95 (95%)
     返回：
         cutoff_radius: 截止频率对应的半径（浮点数）
+    说明：此函数用于滤波器设计，保留能量累计方式。
     """
     magnitude_sq = np.abs(fft_shifted) ** 2
     rows, cols = magnitude_sq.shape
@@ -91,6 +90,43 @@ def compute_cutoff_frequency(fft_shifted, energy_percent=0.95):
     cutoff_idx = np.where(cum_ratio >= energy_percent)[0]
     cutoff_radius = cutoff_idx[0] if len(cutoff_idx) > 0 else max_radius
     return float(cutoff_radius)
+
+
+def compute_cutoff_frequency_3db(fft_shifted):
+    """
+    根据经典的 -3dB 定义计算截止频率（径向平均幅度降至峰值的 1/√2）
+    参数：
+        fft_shifted: 频移后的复数频谱
+    返回：
+        cutoff_radius: 截止频率对应的半径（浮点数）
+    说明：此函数仅用于显示，滤波器设计仍使用能量累计方式。
+    """
+    magnitude = np.abs(fft_shifted)
+    rows, cols = magnitude.shape
+    crow, ccol = rows // 2, cols // 2
+
+    y, x = np.ogrid[:rows, :cols]
+    dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
+    max_radius = int(np.ceil(np.max(dist)))
+
+    # 计算径向平均幅度
+    radial_amp = np.zeros(max_radius + 1)
+    for r in range(max_radius + 1):
+        mask = (dist >= r) & (dist < (r + 1))
+        if np.any(mask):
+            radial_amp[r] = np.mean(magnitude[mask])
+
+    # 寻找峰值（取 r <= 2 范围内的最大值，避免直流点奇异）
+    peak_amp = np.max(radial_amp[:min(3, max_radius+1)])
+    if peak_amp == 0:
+        return float(max_radius)
+
+    target_amp = peak_amp / np.sqrt(2)   # -3dB
+    # 从半径0开始，找到第一个低于阈值的点
+    cutoff_idx = np.where(radial_amp <= target_amp)[0]
+    if len(cutoff_idx) == 0:
+        return float(max_radius)
+    return float(cutoff_idx[0])
 
 
 def gaussian_lowpass_filter(shape, D0):
@@ -147,12 +183,13 @@ def main(input_image_path, output_dir="output", show_output=False):
     主处理流程：
     1. 加载灰度图像
     2. 计算FFT及频谱
-    3. 基于能量累计占比确定截止频率 D0
-    4. 生成高斯低通和高通滤波器
-    5. 应用滤波并重建图像
-    6. 生成优化布局的组合图（原图+频谱居中，高通在上，低通在下）
-    7. 保存最终PNG图像，并标注截止频率及滤波器参数
-    8. 按需显示输出结果
+    3. 基于能量累计95%确定截止频率 D0_filter（用于滤波器构造）
+    4. 基于-3dB定义确定截止频率 D0_display（仅用于显示）
+    5. 生成高斯低通和高通滤波器（使用 D0_filter）
+    6. 应用滤波并重建图像
+    7. 生成优化布局的组合图（原图+频谱居中，高通在上，低通在下）
+    8. 保存最终PNG图像，并标注显示的截止频率 D0_display
+    9. 按需显示输出结果
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -165,14 +202,17 @@ def main(input_image_path, output_dir="output", show_output=False):
     fft_shifted, magnitude_log, magnitude_linear = compute_fft_spectrum(img)
     magnitude_viz = visualize_log_spectrum(magnitude_log)
 
-    # ----- 3. 确定截止频率（基于能量累计95%）-----
-    cutoff_radius = compute_cutoff_frequency(fft_shifted, energy_percent=0.95)
-    D0 = cutoff_radius
-    print(f"计算得到的截止频率 D0 = {D0:.2f} 像素半径")
+    # ----- 3. 确定截止频率 -----
+    # 用于滤波器设计的截止频率（能量累计95%）
+    D0_filter = compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95)
+    print(f"滤波器使用的截止频率（能量累计95%） D0_filter = {D0_filter:.2f} 像素半径")
+    # 用于显示的截止频率（-3dB定义）
+    D0_display = compute_cutoff_frequency_3db(fft_shifted)
+    print(f"显示的截止频率（-3dB定义） D0_display = {D0_display:.2f} 像素半径")
 
-    # ----- 4. 生成高斯滤波器 -----
-    H_lp = gaussian_lowpass_filter(img.shape, D0)
-    H_hp = gaussian_highpass_filter(img.shape, D0)
+    # ----- 4. 生成高斯滤波器（使用 D0_filter）-----
+    H_lp = gaussian_lowpass_filter(img.shape, D0_filter)
+    H_hp = gaussian_highpass_filter(img.shape, D0_filter)
 
     # ----- 5. 应用滤波器并重建图像 -----
     fft_lp = fft_shifted * H_lp
@@ -242,7 +282,7 @@ def main(input_image_path, output_dir="output", show_output=False):
         ax.set_title(title, fontsize=13, fontweight='medium', pad=8)
         ax.axis('off')
 
-    # 将主标题居中，位置参考 ext3 的处理（稍靠下以减少顶部空白）
+    # 将主标题居中
     fig.suptitle("Frequency Domain Filtering Pipeline", fontsize=24, fontweight='semibold',
                  x=0.57, y=0.93, ha='center', color='#1c1c1e')
     fig.canvas.draw()
@@ -294,8 +334,8 @@ def main(input_image_path, output_dir="output", show_output=False):
 
     _add_arrow(_right_center(ax_lp_spec), _left_center(ax_lp_img))
 
-    # 标注截止频率（放置在原始频谱下方）
-    cutoff_text = f"Cutoff Frequency D₀ = {D0:.1f} px\n(95% energy accumulation)"
+    # 标注截止频率（使用 -3dB 定义的值进行显示）
+    cutoff_text = f"Cutoff Frequency D₀ = {D0_display:.1f} px\n(-3dB)"
     ax_original_spec.text(
         0.48, -0.20, cutoff_text,
         transform=ax_original_spec.transAxes,
@@ -327,8 +367,8 @@ def main(input_image_path, output_dir="output", show_output=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="灰度图像频域处理：高斯低通/高通滤波")
-    parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
-                        help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
+    parser.add_argument("--input", "-i", type=str, default="../img/house.bmp",
+                        help="输入图像路径（支持 .bmp .jpg .png），默认 ../img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录，默认为 output")
     parser.add_argument("--show", action="store_true",
@@ -337,7 +377,7 @@ if __name__ == "__main__":
 
     # 检查默认路径是否存在
     if not os.path.exists(args.input):
-        img_folder = Path("img")
+        img_folder = Path("../img")
         if img_folder.exists() and img_folder.is_dir():
             images_found = list(img_folder.glob("*.bmp")) + list(img_folder.glob("*.jpg")) + list(img_folder.glob("*.png"))
             if images_found:

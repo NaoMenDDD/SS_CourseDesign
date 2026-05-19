@@ -1,8 +1,8 @@
 <!--
  * @Author: NaoMenDDD 2017954808@qq.com
- * @Date: 2026-05-18 10:00:00
+ * @Date: 2026-05-19 10:00:00
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @Description: 扩展任务三延伸：频域高通、Sobel与Canny边缘检测对比 - 问题建模与理论方法
+ * @Description: 扩展任务三延伸：Sobel vs Canny 边缘检测对比 - 问题建模与理论方法
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -10,7 +10,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>扩展任务三延伸：Canny边缘检测</title>
+    <title>Sobel vs Canny 边缘检测对比</title>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
         :root {
@@ -197,12 +197,6 @@
             transform: translateY(-2px);
         }
 
-        .block.accent {
-            border-color: var(--accent);
-            background: #f4f7fc;
-            font-weight: 700;
-        }
-
         .block.sobel {
             border-color: var(--color-sobel);
             background: #fef9f6;
@@ -265,7 +259,7 @@
 
         .compare-table {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 0;
             margin: 20px 0;
             border-radius: var(--radius);
@@ -362,49 +356,38 @@
     <div class="container">
         <div class="hero" id="hero">
             <span class="tag">信号与系统 · 课设 · 扩展</span>
-            <h1>Canny边缘检测</h1>
-            <p class="subtitle">对比频域高通滤波、空域Sobel梯度与Canny多级边缘检测，对比三种方法的原理与效果</p>
+            <h1>Sobel vs Canny 边缘检测对比</h1>
+            <p class="subtitle">对比空域Sobel梯度与Canny多级边缘检测，分析两种方法的原理差异与效果异同</p>
         </div>
 
-        <!-- 第一节：三路径系统建模 -->
+        <!-- 第一节：双路径系统建模 -->
         <div class="section" id="section1">
             <div class="card">
-                <h2><span class="num">1</span> 问题建模：三种边缘提取路径</h2>
+                <h2><span class="num">1</span> 问题建模：两种边缘提取路径</h2>
                 <p style="color: var(--text-secondary); margin-bottom: 16px;">
-                    同一输入图像分别经过<strong>频域高通滤波</strong>、<strong>空域Sobel算子</strong>和<strong>Canny多级算法</strong>，得到边缘强度图进行对比。
+                    同一输入图像分别经过<strong>空域Sobel算子</strong>和<strong>Canny多级算法</strong>，得到边缘强度图进行对比。
                 </p>
                 <div class="block-diagram" style="flex-wrap:wrap; gap:20px;">
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;">
-                        <span style="font-weight:700; color:var(--accent);">路径A (频域):</span>
-                        <div class="block accent">f(x,y)</div><span class="arrow">→</span>
-                        <div class="block">2D DFT</div><span class="arrow">→</span>
-                        <div class="block accent">HPF<br><small>H<sub>hp</sub></small></div><span class="arrow">→</span>
-                        <div class="block">IFFT</div><span class="arrow">→</span>
-                        <div class="block accent">g<sub>A</sub>(x,y)</div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;">
-                        <span style="font-weight:700; color:var(--color-sobel);">路径B (Sobel):</span>
+                        <span style="font-weight:700; color:var(--color-sobel);">路径A (Sobel):</span>
                         <div class="block sobel">f(x,y)</div><span class="arrow">→</span>
                         <div class="block sobel">Sobel<br><small>Gx, Gy</small></div><span class="arrow">→</span>
                         <div class="block sobel">|G|<br><small>幅值</small></div><span class="arrow">→</span>
-                        <div class="block sobel">g<sub>B</sub>(x,y)</div>
+                        <div class="block sobel">g<sub>A</sub>(x,y)</div>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;">
-                        <span style="font-weight:700; color:var(--color-canny);">路径C (Canny):</span>
+                        <span style="font-weight:700; color:var(--color-canny);">路径B (Canny):</span>
                         <div class="block canny">f(x,y)</div><span class="arrow">→</span>
                         <div class="block canny">Gaussian<br><small>平滑</small></div><span class="arrow">→</span>
                         <div class="block canny">梯度<br><small>幅值+方向</small></div><span class="arrow">→</span>
                         <div class="block canny">非极大值<br><small>抑制</small></div><span class="arrow">→</span>
                         <div class="block canny">双阈值<br><small>连接</small></div><span class="arrow">→</span>
-                        <div class="block canny">g<sub>C</sub>(x,y)</div>
+                        <div class="block canny">g<sub>B</sub>(x,y)</div>
                     </div>
                 </div>
                 <div style="margin-top:20px;">
                     <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心方程对比</h3>
-                    <div class="equation">\[ H_{\text{hp}}(u,v) = 1 - H_{\text{lp}}(u,v) \quad\rightarrow\quad g_A =
-                        \mathcal{F}^{-1}\{ H_{\text{hp}} \cdot \mathcal{F}\{f\} \} \]</div>
-                    <div class="eq-caption">频域高通：全局频率选择，低频截断，高频保留。理想型有振铃效应。</div>
-                    <div class="equation">\[ G_x = f * S_x \quad G_y = f * S_y \quad\rightarrow\quad |G| = \sqrt{G_x^2 +
+                    <div class="equation">\[ G_x = f * S_x,\quad G_y = f * S_y \quad\rightarrow\quad |G| = \sqrt{G_x^2 +
                         G_y^2} \]</div>
                     <div class="eq-caption">
                         Sobel算子：3×3局部卷积，S<sub>x</sub>=[[-1,0,1],[-2,0,2],[-1,0,1]]，S<sub>y</sub>=S<sub>x</sub><sup>T</sup>。自带平滑效果。
@@ -426,11 +409,8 @@
         <!-- 第二节：理论对比 -->
         <div class="section" id="section2">
             <div class="card">
-                <h2><span class="num">2</span> 理论方法：三种边缘检测范式的对比</h2>
+                <h2><span class="num">2</span> 理论方法：两种边缘检测范式的对比</h2>
                 <div class="demo-row">
-                    <div class="canvas-wrapper"><canvas id="freqEdgeCanvas" width="260" height="200"></canvas>
-                        <div class="canvas-caption">频域高通边缘 (含振铃)</div>
-                    </div>
                     <div class="canvas-wrapper"><canvas id="sobelEdgeCanvas" width="260" height="200"></canvas>
                         <div class="canvas-caption">Sobel边缘 (梯度幅值)</div>
                     </div>
@@ -440,41 +420,34 @@
                 </div>
                 <div class="compare-table">
                     <div class="th">对比维度</div>
-                    <div class="th">频域高通滤波</div>
                     <div class="th">Sobel空域卷积</div>
                     <div class="th">Canny边缘检测</div>
                     <div class="td">处理域</div>
-                    <div class="td">频域 (全局)</div>
                     <div class="td">空域 (局部3×3)</div>
                     <div class="td">空域 (多级局部)</div>
                     <div class="td">理论基础</div>
-                    <div class="td">频率选择 / 卷积定理</div>
                     <div class="td">离散梯度近似</div>
                     <div class="td">最优化边缘检测准则</div>
                     <div class="td">平滑效果</div>
-                    <div class="td">无平滑，噪声敏感</div>
                     <div class="td">内置平滑 (系数加权)</div>
                     <div class="td">高斯平滑 (可控)</div>
                     <div class="td">振铃效应</div>
-                    <div class="td">有 (理想型)</div>
                     <div class="td">无</div>
                     <div class="td">无</div>
                     <div class="td">边缘定位</div>
-                    <div class="td">较粗，有扩散</div>
                     <div class="td">较细，单像素但非最优</div>
                     <div class="td">单像素，最优定位</div>
                     <div class="td">噪声抑制</div>
-                    <div class="td">差</div>
                     <div class="td">中等</div>
                     <div class="td">强 (非极大值+双阈值)</div>
                     <div class="td">计算复杂度</div>
-                    <div class="td">O(N²logN) (FFT)</div>
                     <div class="td">O(N²) (卷积)</div>
                     <div class="td">O(N²) (多次卷积)</div>
                 </div>
                 <div style="margin-top:14px;">
-                    <span class="knowledge-badge">卷积定理 · 第4章</span><span class="knowledge-badge">频域滤波 · 第6章</span><span
-                        class="knowledge-badge">空域梯度算子</span><span class="knowledge-badge">边缘检测理论 · Canny准则</span>
+                    <span class="knowledge-badge">卷积定理 · 第4章</span>
+                    <span class="knowledge-badge">空域梯度算子</span>
+                    <span class="knowledge-badge">边缘检测理论 · Canny准则</span>
                 </div>
             </div>
         </div>
@@ -484,15 +457,15 @@
             <div class="card">
                 <h2><span class="num">3</span> 结论：适用场景与互补性</h2>
                 <p style="color:var(--text-secondary);">
-                    <strong>频域高通</strong>适合需要<strong>全局频率控制</strong>的场景（如频域增强、纹理分析），但振铃效应和噪声敏感是主要缺陷。<br>
                     <strong>Sobel算子</strong>计算简单、响应速度快，适合实时性要求高且对边缘精度要求不高的任务，但梯度幅值较粗，受噪声干扰。<br>
                     <strong>Canny边缘检测</strong>在信噪比、定位精度和单边缘响应之间取得了最佳平衡，是目前应用最广泛的边缘检测方法之一，尤其适合高质量图像分析和计算机视觉预处理。<br>
-                    三者通过卷积定理相联系：频域高通滤波器对应的空域核是sinc函数（带振荡），而Sobel是差分算子，Canny则是高斯导数结合多步优化。
+                    两者通过梯度计算相联系：Sobel直接输出梯度幅值，而Canny在此基础上增加了非极大值抑制和双阈值连接，得到更细、更准确的边缘。
                 </p>
-                <span class="knowledge-badge">空域vs频域</span><span class="knowledge-badge">Canny三准则</span>
+                <span class="knowledge-badge">空域梯度</span>
+                <span class="knowledge-badge">Canny三准则</span>
             </div>
         </div>
-        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 频域高通、Sobel与Canny边缘检测对比 · 深度扩展</div>
+        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; Sobel vs Canny边缘检测对比 · 深度扩展</div>
     </div>
     <script>
         (() => {
@@ -512,30 +485,7 @@
                 entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
             }, { threshold: 0.2 });
             heroObs.observe(hero);
-            function drawFreqEdge() {
-                const canvas = document.getElementById('freqEdgeCanvas'); if (!canvas) return;
-                const ctx = canvas.getContext('2d'); const w = canvas.width, h = canvas.height;
-                const imageData = ctx.createImageData(w, h);
-                for (let y = 0; y < h; y++) {
-                    for (let x = 0; x < w; x++) {
-                        const dx = x - w / 2, dy = y - h / 2;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        const edgeDist = Math.abs(dist - 65);
-                        const edge = Math.exp(-edgeDist * edgeDist / 50);
-                        const ringDist = dist - 65;
-                        const ringing = (ringDist > 0) ? Math.abs(Math.sin(ringDist * 0.8) / (ringDist * 0.3 + 0.5)) * 0.5 : 0;
-                        let val = edge * 180 + ringing * 100 + 15;
-                        val = Math.min(255, Math.max(5, val));
-                        const idx = (y * w + x) * 4;
-                        imageData.data[idx] = imageData.data[idx + 1] = imageData.data[idx + 2] = val;
-                        imageData.data[idx + 3] = 255;
-                    }
-                }
-                ctx.putImageData(imageData, 0, 0);
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 11px -apple-system, sans-serif';i
-                ctx.fillText('振铃波纹 →', w - 75, 18);
-            }
+
             function drawSobelEdge() {
                 const canvas = document.getElementById('sobelEdgeCanvas'); if (!canvas) return;
                 const ctx = canvas.getContext('2d'); const w = canvas.width, h = canvas.height;
@@ -558,6 +508,7 @@
                 ctx.font = 'bold 11px -apple-system, sans-serif';
                 ctx.fillText('边缘较粗', w - 65, 18);
             }
+
             function drawCannyEdge() {
                 const canvas = document.getElementById('cannyEdgeCanvas'); if (!canvas) return;
                 const ctx = canvas.getContext('2d'); const w = canvas.width, h = canvas.height;
@@ -580,8 +531,9 @@
                 ctx.font = 'bold 11px -apple-system, sans-serif';
                 ctx.fillText('单像素、干净', w - 80, 18);
             }
-            setTimeout(() => { drawFreqEdge(); drawSobelEdge(); drawCannyEdge(); }, 400);
-            window.addEventListener('resize', () => { drawFreqEdge(); drawSobelEdge(); drawCannyEdge(); });
+
+            setTimeout(() => { drawSobelEdge(); drawCannyEdge(); }, 400);
+            window.addEventListener('resize', () => { drawSobelEdge(); drawCannyEdge(); });
         })();
     </script>
 </body>
