@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-14 16:36:11
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-14 16:41:22
+LastEditTime: 2026-05-19 17:09:31
 Description: 扩展任务一：对比理想低通、巴特沃斯低通、高斯低通的振铃效应
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -197,7 +197,7 @@ def main(input_image_path, output_dir="output", butterworth_order=2, show_output
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="扩展任务一：对比理想低通、巴特沃斯低通、高斯低通的振铃效应")
-    parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
+    parser.add_argument("--input", "-i", type=str, default="../img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录")
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
-        img_folder = Path("img")
+        img_folder = Path("../img")
         if img_folder.exists():
             imgs = list(img_folder.glob("*.bmp")) + list(img_folder.glob("*.jpg")) + list(img_folder.glob("*.png"))
             if imgs:

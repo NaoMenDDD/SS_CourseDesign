@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 22:00:41
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-15 10:45:16
+LastEditTime: 2026-05-19 17:08:52
 Description: 任务二：频域差分滤波器 - 二维一阶差分（梯度）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -214,8 +214,8 @@ def main(input_image_path, output_dir="output", show_output=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="任务二：频域差分滤波器 - 二维一阶差分（梯度）")
-    parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
-                        help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
+    parser.add_argument("--input", "-i", type=str, default="../img/house.bmp",
+                        help="输入图像路径（支持 .bmp .jpg .png），默认 ../img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录，默认为 output")
     parser.add_argument("--show", action="store_true",
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
-        img_folder = Path("img")
+        img_folder = Path("../img")
         if img_folder.exists() and img_folder.is_dir():
             images_found = list(img_folder.glob("*.bmp")) + list(img_folder.glob("*.jpg")) + list(img_folder.glob("*.png"))
             if images_found:
