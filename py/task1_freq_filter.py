@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-19 17:09:06
+LastEditTime: 2026-05-19 19:42:24
 Description: 任务1：频域滤波
 '''
 
@@ -69,24 +69,30 @@ def compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95):
         cutoff_radius: 截止频率对应的半径（浮点数）
     说明：此函数用于滤波器设计，保留能量累计方式。
     """
+    # 计算频谱的幅度平方（能量）
     magnitude_sq = np.abs(fft_shifted) ** 2
     rows, cols = magnitude_sq.shape
     crow, ccol = rows // 2, cols // 2
 
+    # 计算每个频率点到中心的距离
     y, x = np.ogrid[:rows, :cols]
     dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
 
+    # 计算径向能量分布
     max_radius = int(np.ceil(np.max(dist)))
     radial_energy = np.zeros(max_radius + 1)
 
+    # 累积每个半径范围内的能量
     for r in range(max_radius + 1):
         mask = (dist >= r) & (dist < (r + 1))
         radial_energy[r] = np.sum(magnitude_sq[mask])
 
+    # 计算累计能量比例    
     cum_energy = np.cumsum(radial_energy)
     total_energy = cum_energy[-1]
     cum_ratio = cum_energy / total_energy
 
+    # 找到第一个累计能量比例超过阈值的位置
     cutoff_idx = np.where(cum_ratio >= energy_percent)[0]
     cutoff_radius = cutoff_idx[0] if len(cutoff_idx) > 0 else max_radius
     return float(cutoff_radius)
@@ -367,8 +373,8 @@ def main(input_image_path, output_dir="output", show_output=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="灰度图像频域处理：高斯低通/高通滤波")
-    parser.add_argument("--input", "-i", type=str, default="../img/house.bmp",
-                        help="输入图像路径（支持 .bmp .jpg .png），默认 ../img/house.bmp")
+    parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
+                        help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录，默认为 output")
     parser.add_argument("--show", action="store_true",
@@ -377,7 +383,7 @@ if __name__ == "__main__":
 
     # 检查默认路径是否存在
     if not os.path.exists(args.input):
-        img_folder = Path("../img")
+        img_folder = Path("img")
         if img_folder.exists() and img_folder.is_dir():
             images_found = list(img_folder.glob("*.bmp")) + list(img_folder.glob("*.jpg")) + list(img_folder.glob("*.png"))
             if images_found:

@@ -1,13 +1,15 @@
 '''
 Author: NaoMenDDD 2017954808@qq.com
-Date: 2026-05-14 16:36:28
+Date: 2026-05-19 22:00:00
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-19 17:09:16
-Description: 扩展任务三：频域高通滤波 vs Sobel vs Canny 边缘检测对比
+Description: 扩展任务三子任务：频域高通滤波 vs Sobel 边缘检测对比
 
-Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
+对比两种边缘提取方法：
+- 路径A (频域)：原图 → FFT → 高通滤波 → IFFT → 边缘图
+- 路径B (空域)：原图 → Sobel 算子 → 梯度幅值
+
+输出组合对比图，包含原图、频域高通结果、Sobel 结果及方法说明。
 '''
-
 
 import argparse
 import numpy as np
@@ -16,7 +18,7 @@ import cv2
 import os
 from pathlib import Path
 
-# 样式设置
+# 样式设置（与项目保持一致）
 plt.style.use('seaborn-v0_8-white')
 plt.rcParams.update({
     'font.family': 'sans-serif',
@@ -55,7 +57,7 @@ def load_grayscale_image(image_path):
 
 def compute_cutoff_frequency(fft_shifted, energy_percent=0.95):
     """
-    根据径向能量累计比例计算自适应截止频率
+    根据径向能量累计比例计算自适应截止频率（用于滤波器设计）
     参数：
         fft_shifted: 频移后的复数频谱
         energy_percent: 累计能量占比阈值（默认0.95=95%）
@@ -95,7 +97,6 @@ def ideal_highpass_filter(shape, D0):
     v = np.arange(rows) - crow
     U, V = np.meshgrid(u, v)
     D = np.sqrt(U**2 + V**2)
-    # 理想高通：D <= D0 处为0，D > D0 处为1
     H = np.ones(shape, dtype=np.float32)
     H[D <= D0] = 0.0
     return H
@@ -116,7 +117,6 @@ def gaussian_highpass_filter(shape, D0):
     v = np.arange(rows) - crow
     U, V = np.meshgrid(u, v)
     D2 = U**2 + V**2
-    # 高斯高通 = 1 - 高斯低通
     H_lp = np.exp(-D2 / (2 * (D0 ** 2)))
     return 1 - H_lp
 
@@ -130,12 +130,10 @@ def apply_filter_and_reconstruct(fft_shifted, filter_h):
     返回：
         重建后的图像（uint8，范围0-255）
     """
-    # 频域滤波
     filtered = fft_shifted * filter_h
-    # 逆FFT重建
     img_recon = np.fft.ifft2(np.fft.ifftshift(filtered))
     img_recon = np.real(img_recon)
-    img_recon = np.abs(img_recon)
+    img_recon = np.abs(img_recon)   # 高通结果可能有负值，取绝对值
     # 归一化到 0-255
     img_min, img_max = img_recon.min(), img_recon.max()
     if img_max - img_min > 1e-8:
@@ -153,46 +151,16 @@ def sobel_edge_detection(img_uint8):
     返回：
         梯度幅度图（uint8）
     """
-    # 分别计算 x 和 y 方向梯度
     grad_x = cv2.Sobel(img_uint8, cv2.CV_32F, 1, 0, ksize=3)
     grad_y = cv2.Sobel(img_uint8, cv2.CV_32F, 0, 1, ksize=3)
-    # 计算梯度幅度
     mag = np.sqrt(grad_x**2 + grad_y**2)
     # 归一化到 0-255
     mag_norm = (mag - mag.min()) / (mag.max() - mag.min() + 1e-8) * 255.0
     return mag_norm.astype(np.uint8)
 
 
-def canny_edge_detection(img_uint8, low_threshold=None, high_threshold=None):
-    """
-    使用 Canny 算子进行边缘检测
-    参数：
-        img_uint8: 输入灰度图（uint8）
-        low_threshold: 低阈值（若为None则自动计算）
-        high_threshold: 高阈值（若为None则自动计算）
-    返回：
-        二值边缘图（uint8）
-    """
-    if low_threshold is None or high_threshold is None:
-        # 自动阈值计算
-        sigma = 0.33
-        v = np.median(img_uint8)
-        low = int(max(0, (1.0 - sigma) * v))
-        high = int(min(255, (1.0 + sigma) * v))
-        edges = cv2.Canny(img_uint8, low, high)
-    else:
-        edges = cv2.Canny(img_uint8, low_threshold, high_threshold)
-    return edges
-
-
 def normalize_display(img):
-    """
-    将图像归一化到 0-255 范围用于显示
-    参数：
-        img: 输入图像数组
-    返回：
-        归一化后的图像（uint8）
-    """
+    """将任意图像归一化到 0-255 范围用于显示"""
     img_min, img_max = img.min(), img.max()
     if img_max - img_min > 1e-8:
         return ((img - img_min) / (img_max - img_min) * 255.0).astype(np.uint8)
@@ -200,15 +168,13 @@ def normalize_display(img):
         return np.zeros_like(img).astype(np.uint8)
 
 
-def main(input_image_path, output_dir="output", filter_type="ideal", canny_low=None, canny_high=None, show_output=False):
+def main(input_image_path, output_dir="output", filter_type="ideal", show_output=False):
     """
-    主处理流程：比较频域高通滤波 vs Sobel vs Canny 三种边缘检测方法
+    主处理流程：比较频域高通滤波与 Sobel 边缘检测
     参数：
         input_image_path: 输入图像路径
         output_dir: 输出目录
         filter_type: 高通滤波器类型 ("ideal" 或 "gaussian")
-        canny_low: Canny 低阈值（若为None则自动计算）
-        canny_high: Canny 高阈值（若为None则自动计算）
         show_output: 是否显示输出图片
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -218,7 +184,7 @@ def main(input_image_path, output_dir="output", filter_type="ideal", canny_low=N
     img = load_grayscale_image(input_image_path)
     img_uint8 = img.astype(np.uint8)
 
-    # ----- 2. 计算自适应截止频率 -----
+    # ----- 2. 计算自适应截止频率（基于频谱能量95%）-----
     fft_orig = np.fft.fft2(img)
     fft_shifted = np.fft.fftshift(fft_orig)
     D0 = compute_cutoff_frequency(fft_shifted, energy_percent=0.95)
@@ -232,25 +198,22 @@ def main(input_image_path, output_dir="output", filter_type="ideal", canny_low=N
         H_hp = gaussian_highpass_filter(img.shape, D0)
         filter_name = "Gaussian Highpass"
 
-    # ----- 4. 应用三种边缘检测方法 -----
     img_hp = apply_filter_and_reconstruct(fft_shifted, H_hp)
-    img_sobel = sobel_edge_detection(img_uint8)
-    img_canny = canny_edge_detection(img_uint8, canny_low, canny_high)
 
-    # ----- 5. 生成对比结果图 -----
-    fig = plt.figure(figsize=(15, 10), facecolor='white')
-    gs = fig.add_gridspec(2, 3, hspace=0.22, wspace=0.15,
-                          left=0.08, right=0.92, top=0.86, bottom=0.10)
+    # ----- 4. Sobel 边缘检测 -----
+    img_sobel = sobel_edge_detection(img_uint8)
+
+    # ----- 5. 生成对比结果图（1行3列布局：原图、高通、Sobel，外加底部说明）-----
+    fig = plt.figure(figsize=(15, 7), facecolor='white')
+    # 上移整行图片：增大 top 并适当增大 bottom 以整体上移但保持高度
+    gs = fig.add_gridspec(1, 3, hspace=0.2, wspace=0.2,
+                          left=0.05, right=0.95, top=0.94, bottom=0.20)
 
     ax_orig = fig.add_subplot(gs[0, 0])
-    ax_hp = fig.add_subplot(gs[0, 1])
-    ax_sobel = fig.add_subplot(gs[0, 2])
-    ax_canny = fig.add_subplot(gs[1, 1])
-    ax_legend = fig.add_subplot(gs[1, 2])
-    ax_empty = fig.add_subplot(gs[1, 0])
-    ax_empty.axis('off')
+    ax_hp   = fig.add_subplot(gs[0, 1])
+    ax_sobel= fig.add_subplot(gs[0, 2])
 
-    # 原图
+    # 显示原图
     img_disp = normalize_display(img)
     ax_orig.imshow(img_disp, cmap='gray')
     ax_orig.set_title("Original Image", fontsize=12, fontweight='medium')
@@ -259,45 +222,35 @@ def main(input_image_path, output_dir="output", filter_type="ideal", canny_low=N
     # 频域高通滤波结果
     ax_hp.imshow(img_hp, cmap='gray')
     ax_hp.set_title(f"Frequency Domain {filter_name}\nD₀={D0:.1f}px", fontsize=11, fontweight='medium')
-    ax_hp.text(0.5, -0.05, "Highpass enhances edges globally", transform=ax_hp.transAxes,
-               fontsize=10.5, ha='center', color='#8e8e93', style='italic')
     ax_hp.axis('off')
 
-    # Sobel 边缘检测结果
+    # Sobel 结果
     ax_sobel.imshow(img_sobel, cmap='gray')
     ax_sobel.set_title("Sobel (Gradient Magnitude)", fontsize=11, fontweight='medium')
-    ax_sobel.text(0.5, -0.05, "Sobel gives thick gradient", transform=ax_sobel.transAxes,
-                  fontsize=10.5, ha='center', color='#8e8e93', style='italic')
     ax_sobel.axis('off')
 
-    # Canny 边缘检测结果
-    ax_canny.imshow(img_canny, cmap='gray')
-    canny_param = f"auto (median={np.median(img_uint8):.0f})" if (canny_low is None) else f"low={canny_low}, high={canny_high}"
-    ax_canny.set_title(f"Canny Edge Detection\n{canny_param}", fontsize=11, fontweight='medium')
-    ax_canny.text(0.5, -0.05, "Canny produces thin, accurate edges", transform=ax_canny.transAxes,
-                  fontsize=10.5, ha='center', color='#8e8e93', style='italic')
-    ax_canny.axis('off')
-
-    # 方法对比说明文本
-    ax_legend.axis('off')
+    # 添加底部说明文字（方法对比）
     text_str = (
         "Comparison Summary:\n\n"
-        "• Frequency HPF: global edge enhancement,\n  may cause ringing (ideal)\n  or smooth (Gaussian).\n\n"
-        "• Sobel: simple gradient magnitude,\n  response to all edges, thicker lines.\n\n"
-        "• Canny: non-maximum suppression +\n  double threshold, thin and clean edges,\n  less noise."
+        "• Frequency HPF: global edge enhancement.\n"
+        "  - Ideal HPF: sharp cut-off, causes ringing.\n"
+        "  - Gaussian HPF: smooth transition, no ringing.\n\n"
+        "• Sobel: local gradient approximation,\n"
+        "  simple and fast, thicker edges."
     )
-    ax_legend.text(0.05, 0.5, text_str, transform=ax_legend.transAxes, fontsize=10,
-                   verticalalignment='center', fontfamily='monospace',
-                   bbox=dict(boxstyle="round,pad=0.4", facecolor='#f2f2f6', edgecolor='none'))
+    fig.text(0.5, 0.05, text_str, ha='center', fontsize=10,
+             fontfamily='monospace', color='#1c1c1e',
+             bbox=dict(boxstyle="round,pad=0.4", facecolor='#f2f2f6', edgecolor='none'))
 
-    fig.suptitle("Comparison: Frequency Domain Highpass vs. Sobel vs. Canny", fontsize=16, fontweight='semibold', y=0.94)
+    fig.suptitle("Comparison: Frequency Domain Highpass vs. Sobel Edge Detection",
+                 fontsize=14, fontweight='semibold', y=0.96)
 
     # ----- 6. 保存结果 -----
-    output_path = os.path.join(output_dir, "hpf_vs_sobel_vs_canny.png")
+    output_path = os.path.join(output_dir, "hpf_vs_sobel.png")
     plt.savefig(output_path, bbox_inches='tight', pad_inches=0.28, facecolor='white', dpi=200)
     plt.close(fig)
 
-    # ----- 7. 显示结果 -----
+    # ----- 7. 可选显示 -----
     if show_output:
         saved = cv2.imread(output_path, cv2.IMREAD_COLOR)
         if saved is not None:
@@ -311,22 +264,18 @@ def main(input_image_path, output_dir="output", filter_type="ideal", canny_low=N
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="扩展任务三延伸：频域高通滤波 vs Sobel vs Canny 边缘检测")
-    parser.add_argument("--input", "-i", type=str, default="../img/house.bmp",
+    parser = argparse.ArgumentParser(description="频域高通滤波 vs Sobel 边缘检测对比")
+    parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录")
     parser.add_argument("--filter_type", type=str, default="ideal", choices=["ideal", "gaussian"],
                         help="高通滤波器类型：ideal 或 gaussian，默认 ideal")
-    parser.add_argument("--canny_low", type=int, default=None,
-                        help="Canny低阈值（若不指定则自动计算）")
-    parser.add_argument("--canny_high", type=int, default=None,
-                        help="Canny高阈值（若不指定则自动计算）")
     parser.add_argument("--show", action="store_true", help="显示结果图片")
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
-        img_folder = Path("../img")
+        img_folder = Path("img")
         if img_folder.exists():
             imgs = list(img_folder.glob("*.bmp")) + list(img_folder.glob("*.jpg")) + list(img_folder.glob("*.png"))
             if imgs:
@@ -334,5 +283,5 @@ if __name__ == "__main__":
                 print(f"默认图像不存在，自动选择: {args.input}")
             else:
                 raise FileNotFoundError(f"未找到图像: {args.input}")
-    main(args.input, args.output_dir, args.filter_type, args.canny_low, args.canny_high, args.show)
-    print(f"\n完成！输出文件: {args.output_dir}/hpf_vs_sobel_vs_canny.png")
+    main(args.input, args.output_dir, args.filter_type, args.show)
+    print(f"\n完成！输出文件: {args.output_dir}/hpf_vs_sobel.png")
