@@ -2,12 +2,9 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-13 10:42:57
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @LastEditTime: 2026-05-13 12:04:12
- * @Description: 扩展任务一：振铃效应对比 - 问题建模与理论方法
- * 
- * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
+ * @LastEditTime: 2026-05-19 08:42:48
+ * @Description: 扩展任务一：振铃效应对比 - 问题建模与理论方法（MathJax 版）
 -->
-
 
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -16,6 +13,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>扩展任务一：振铃效应对比 - 问题建模与理论方法</title>
+    <!-- MathJax 专业公式渲染 -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
         :root {
             --bg: #ffffff;
@@ -177,18 +176,14 @@
         }
 
         .equation {
-            font-family: var(--font-math);
-            font-size: 1rem;
             background: #ffffff;
             padding: 16px 20px;
             border-radius: var(--radius);
             margin: 12px 0;
             border-left: 3px solid var(--accent);
             overflow-x: auto;
-            white-space: nowrap;
-            letter-spacing: 0.02em;
-            color: #2c2c30;
             box-shadow: var(--shadow-sm);
+            font-size: 1rem;
         }
 
         .eq-caption {
@@ -331,8 +326,9 @@
                     <div
                         style="background:#fff; border-radius:var(--radius); padding:20px; border-left: 3px solid var(--color-ideal);">
                         <h3 style="color:var(--color-ideal); margin-bottom:10px;">理想低通 (ILPF)</h3>
-                        <div class="equation" style="border-left-color:var(--color-ideal); font-size:0.9rem;">
-                            H(u,v) = { 1, D≤D₀ ; 0, D>D₀ }
+                        <div class="equation" style="border-left-color:var(--color-ideal);">
+                            \[ H_{\text{ILPF}}(u,v) = \begin{cases} 1, & D(u,v) \le D_0 \\ 0, & D(u,v) > D_0 \end{cases}
+                            \]
                         </div>
                         <p style="font-size:0.82rem; color:var(--text-secondary);">频域<strong>硬截断</strong>，对应空域sinc函数卷积 →
                             <strong style="color:var(--color-ideal);">振铃严重</strong>
@@ -342,8 +338,8 @@
                     <div
                         style="background:#fff; border-radius:var(--radius); padding:20px; border-left: 3px solid var(--color-butter);">
                         <h3 style="color:var(--color-butter); margin-bottom:10px;">巴特沃斯低通 (BLPF)</h3>
-                        <div class="equation" style="border-left-color:var(--color-butter); font-size:0.9rem;">
-                            H(u,v) = 1 / [1 + (D/D₀)<sup>2n</sup>]
+                        <div class="equation" style="border-left-color:var(--color-butter);">
+                            \[ H_{\text{BLPF}}(u,v) = \frac{1}{1 + \left( \frac{D(u,v)}{D_0} \right)^{2n}} \]
                         </div>
                         <p style="font-size:0.82rem; color:var(--text-secondary);">n阶平滑过渡，n越大越接近理想 → <strong
                                 style="color:var(--color-butter);">振铃可控</strong></p>
@@ -352,8 +348,8 @@
                     <div
                         style="background:#fff; border-radius:var(--radius); padding:20px; border-left: 3px solid var(--color-gauss);">
                         <h3 style="color:var(--color-gauss); margin-bottom:10px;">高斯低通 (GLPF)</h3>
-                        <div class="equation" style="border-left-color:var(--color-gauss); font-size:0.9rem;">
-                            H(u,v) = exp[ −D² / (2·D₀²) ]
+                        <div class="equation" style="border-left-color:var(--color-gauss);">
+                            \[ H_{\text{GLPF}}(u,v) = \exp\left( -\frac{D^2(u,v)}{2 D_0^2} \right) \]
                         </div>
                         <p style="font-size:0.82rem; color:var(--text-secondary);">完全平滑衰减，无旁瓣 → <strong
                                 style="color:var(--color-gauss);">无振铃</strong></p>

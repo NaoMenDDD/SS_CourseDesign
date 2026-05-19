@@ -2,10 +2,8 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-13 10:43:04
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @LastEditTime: 2026-05-13 12:06:42
- * @Description: 扩展任务二：同态滤波光照校正 - 问题建模与理论方法
- * 
- * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
+ * @LastEditTime: 2026-05-19 01:00:59
+ * @Description: 扩展任务二：同态滤波光照校正 - 问题建模与理论方法（MathJax 版）
 -->
 
 <!DOCTYPE html>
@@ -15,6 +13,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>扩展任务二：同态滤波光照校正 - 问题建模与理论方法</title>
+    <!-- MathJax 专业公式渲染 -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
         :root {
             --bg: #ffffff;
@@ -215,18 +215,14 @@
         }
 
         .equation {
-            font-family: var(--font-math);
-            font-size: 1rem;
             background: #ffffff;
             padding: 16px 20px;
             border-radius: var(--radius);
             margin: 12px 0;
             border-left: 3px solid var(--accent);
             overflow-x: auto;
-            white-space: nowrap;
-            letter-spacing: 0.02em;
-            color: #2c2c30;
             box-shadow: var(--shadow-sm);
+            font-size: 1rem;
         }
 
         .eq-caption {
@@ -381,18 +377,19 @@
                 <div style="margin-top: 20px;">
                     <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心方程</h3>
                     <div class="equation">
-                        f(x,y) = i(x,y) · r(x,y) &nbsp;&nbsp;（光照×反射）
+                        \[ f(x,y) = i(x,y) \cdot r(x,y) \quad \text{(光照 × 反射)} \]
                     </div>
                     <div class="eq-caption">图像形成模型：i 变化缓慢（低频），r 包含细节（高频）。不均匀光照 = i 的动态范围过大。</div>
                     <div class="equation">
-                        ln[f(x,y)] = ln[i(x,y)] + ln[r(x,y)]
+                        \[ \ln[f(x,y)] = \ln[i(x,y)] + \ln[r(x,y)] \]
                     </div>
                     <div class="eq-caption">对数变换将乘法分离为加法，使频域线性滤波可分别处理两个分量。</div>
                     <div class="equation">
-                        H<sub>homo</sub>(u,v) = (γ<sub>H</sub> − γ<sub>L</sub>) · [1 − exp(−c·D²/D₀²)] + γ<sub>L</sub>
+                        \[ H_{\text{homo}}(u,v) = (\gamma_H - \gamma_L) \left[1 - \exp\left(-c
+                        \frac{D^2}{D_0^2}\right)\right] + \gamma_L \]
                     </div>
                     <div class="eq-caption">同态滤波器：γ<sub>L</sub>
-                        <1 衰减低频（压缩光照），γ<sub>H</sub>>1 增强高频（提升反射细节）。c 控制过渡陡峭度。
+                        < 1 衰减低频（压缩光照），γ<sub>H</sub> > 1 增强高频（提升反射细节）。c 控制过渡陡峭度。
                     </div>
                 </div>
             </div>
