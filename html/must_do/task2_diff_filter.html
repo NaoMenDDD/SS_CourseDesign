@@ -2,10 +2,8 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-13 10:40:05
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @LastEditTime: 2026-05-13 12:04:01
+ * @LastEditTime: 2026-05-19 00:45:47
  * @Description: 任务二：差分滤波器设计 - 问题建模与理论方法
- * 
- * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
 -->
 
 <!DOCTYPE html>
@@ -15,7 +13,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>任务二：差分滤波器 - 问题建模与理论方法</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
+        /* 与任务一类似，保留原有样式，但方程部分改用 MathJax */
         :root {
             --bg: #ffffff;
             --surface: #f5f5f7;
@@ -219,18 +219,19 @@
         }
 
         .equation {
-            font-family: var(--font-math);
-            font-size: 1.1rem;
             background: #ffffff;
             padding: 18px 24px;
             border-radius: var(--radius);
             margin: 16px 0;
             border-left: 3px solid var(--accent);
             overflow-x: auto;
-            white-space: nowrap;
-            letter-spacing: 0.02em;
-            color: #2c2c30;
             box-shadow: var(--shadow-sm);
+            transition: box-shadow var(--transition-fast);
+            font-size: 1rem;
+        }
+
+        .equation:hover {
+            box-shadow: var(--shadow-md);
         }
 
         .eq-caption {
@@ -390,18 +391,18 @@
                 <div style="margin-top: 28px;">
                     <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心数学方程：频域微分性质</h3>
                     <div class="equation">
-                        ∂f/∂x &nbsp;↔&nbsp; j·2π·u · F(u,v) &nbsp;&nbsp;|&nbsp;&nbsp; ∂f/∂y &nbsp;↔&nbsp; j·2π·v ·
-                        F(u,v)
+                        \[ \frac{\partial f}{\partial x} \;\leftrightarrow\; j2\pi u \cdot F(u,v) \qquad \frac{\partial
+                        f}{\partial y} \;\leftrightarrow\; j2\pi v \cdot F(u,v) \]
                     </div>
                     <div class="eq-caption">傅里叶变换的微分性质：空域求导 ⇔ 频域乘以 j·2π·频率变量。这是差分滤波器的理论基础。</div>
                     <div class="equation">
-                        H<sub>diff_x</sub>(u,v) = j·2π·u / M &nbsp;&nbsp;|&nbsp;&nbsp; H<sub>diff_y</sub>(u,v) = j·2π·v
-                        / N
+                        \[ H_{\text{diff}_x}\ (u,v) = j2\pi u / M \qquad H_{\text{diff}_y}\ (u,v) = j2\pi v / N \]
                     </div>
                     <div class="eq-caption">水平和垂直差分滤波器的频域传递函数。M、N为图像尺寸，u、v为离散频率坐标（中心化后范围为 −M/2 ~ M/2）。</div>
                     <div class="equation">
-                        |∇f(x,y)| = √[ (∂f/∂x)² + (∂f/∂y)² ] = √[ IFFT{H<sub>diff_x</sub>·F}² +
-                        IFFT{H<sub>diff_y</sub>·F}² ]
+                        \[ |\nabla f(x,y)| = \sqrt{ \left(\frac{\partial f}{\partial x}\right)^2 + \left(\frac{\partial
+                        f}{\partial y}\right)^2 } = \sqrt{ \left[\mathcal{F}^{-1}\{H_{\text{diff}_x}\ F\}\right]^2 +
+                        \left[\mathcal{F}^{-1}\{H_{\text{diff}_y}\ F\}\right]^2 } \]
                     </div>
                     <div class="eq-caption">梯度幅值：综合水平和垂直差分结果，得到边缘强度图。</div>
                 </div>
@@ -415,12 +416,10 @@
                 <p style="color: var(--text-secondary); margin-bottom: 20px;">
                     差分滤波器本质上是<strong>频率域的梯度算子</strong>，它对高频分量施加线性增益，频率越高增益越大。</p>
                 <div class="spectrum-demo">
-                    <div class="canvas-wrapper">
-                        <canvas id="filterResponseCanvas" width="280" height="280"></canvas>
+                    <div class="canvas-wrapper"><canvas id="filterResponseCanvas" width="280" height="280"></canvas>
                         <div class="canvas-caption">差分滤波器 |H<sub>diff</sub>(u,v)| 响应</div>
                     </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="gradientDemoCanvas" width="280" height="280"></canvas>
+                    <div class="canvas-wrapper"><canvas id="gradientDemoCanvas" width="280" height="280"></canvas>
                         <div class="canvas-caption">梯度幅值示意图 (边缘亮显)</div>
                     </div>
                 </div>
@@ -470,16 +469,12 @@
                     </div>
                 </div>
                 <p style="color:var(--text-secondary); margin-top:16px;">
-                    <strong>梯度幅值图</strong>综合了两个方向的差分结果，亮区对应图像中亮度剧烈变化的位置（边缘、轮廓、纹理）。
-                    与高通滤波不同，差分滤波器对频率的增益是<strong>线性递增</strong>的，而非二值截断，因此边缘强度与局部对比度成正比。
+                    <strong>梯度幅值图</strong>综合了两个方向的差分结果，亮区对应图像中亮度剧烈变化的位置（边缘、轮廓、纹理）。与高通滤波不同，差分滤波器对频率的增益是<strong>线性递增</strong>的，而非二值截断，因此边缘强度与局部对比度成正比。
                 </p>
-                <span class="knowledge-badge">偏导数与梯度</span>
-                <span class="knowledge-badge">边缘强度映射</span>
+                <span class="knowledge-badge">偏导数与梯度</span><span class="knowledge-badge">边缘强度映射</span>
             </div>
         </div>
-        <div class="footer-note">
-            信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 差分滤波器 · 问题建模与理论方法
-        </div>
+        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 差分滤波器 · 问题建模与理论方法</div>
     </div>
     <script>
         (() => {
@@ -495,12 +490,8 @@
                 entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
             }, { rootMargin: '0px 0px -60px 0px', threshold: 0.15 });
             sections.forEach(s => observer.observe(s));
-            const heroObs = new IntersectionObserver((entries) => {
-                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
-            }, { threshold: 0.2 });
+            const heroObs = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); }); }, { threshold: 0.2 });
             heroObs.observe(hero);
-
-            // 绘制差分滤波器频率响应 (中心为0频率，亮度代表增益大小)
             function drawFilterResponse() {
                 const canvas = document.getElementById('filterResponseCanvas');
                 if (!canvas) return;
@@ -510,27 +501,20 @@
                 const imageData = ctx.createImageData(w, h);
                 for (let y = 0; y < h; y++) {
                     for (let x = 0; x < w; x++) {
-                        const u = (x - cx) / (cx);
-                        const v = (y - cy) / (cy);
+                        const u = (x - cx) / cx, v = (y - cy) / cy;
                         const r = Math.sqrt(u * u + v * v);
                         const gain = Math.min(1, r * 1.2);
                         const val = Math.floor(gain * 240 + 10);
                         const idx = (y * w + x) * 4;
-                        imageData.data[idx] = val;
-                        imageData.data[idx + 1] = val * 0.7;
-                        imageData.data[idx + 2] = val * 0.4;
-                        imageData.data[idx + 3] = 255;
+                        imageData.data[idx] = val; imageData.data[idx + 1] = val * 0.7; imageData.data[idx + 2] = val * 0.4; imageData.data[idx + 3] = 255;
                     }
                 }
                 ctx.putImageData(imageData, 0, 0);
-                // 标注
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 13px -apple-system, sans-serif';
                 ctx.fillText('增益↑', cx + 10, 18);
                 ctx.fillText('频率→', w - 45, cy - 6);
             }
-
-            // 绘制模拟梯度幅值图
             function drawGradientDemo() {
                 const canvas = document.getElementById('gradientDemoCanvas');
                 if (!canvas) return;
@@ -539,19 +523,14 @@
                 const imageData = ctx.createImageData(w, h);
                 for (let y = 0; y < h; y++) {
                     for (let x = 0; x < w; x++) {
-                        // 模拟一个圆形区域边缘
                         const dx = x - w / 2, dy = y - h / 2;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         const edgeDist = Math.abs(dist - 70);
                         const edgeIntensity = Math.exp(-edgeDist * edgeDist / 80) * 220;
-                        // 添加一些纹理
                         const noise = (Math.sin(x * 0.5) * Math.cos(y * 0.5)) * 15;
                         let val = Math.min(255, Math.max(5, edgeIntensity + noise + 15));
                         const idx = (y * w + x) * 4;
-                        imageData.data[idx] = val;
-                        imageData.data[idx + 1] = val;
-                        imageData.data[idx + 2] = val;
-                        imageData.data[idx + 3] = 255;
+                        imageData.data[idx] = val; imageData.data[idx + 1] = val; imageData.data[idx + 2] = val; imageData.data[idx + 3] = 255;
                     }
                 }
                 ctx.putImageData(imageData, 0, 0);
@@ -559,7 +538,6 @@
                 ctx.font = 'bold 12px -apple-system, sans-serif';
                 ctx.fillText('边缘高亮', w - 70, h - 10);
             }
-
             setTimeout(() => { drawFilterResponse(); drawGradientDemo(); }, 400);
             window.addEventListener('resize', () => { drawFilterResponse(); drawGradientDemo(); });
         })();
