@@ -101,7 +101,9 @@
 
 2. [程序实现](py/task1_freq_filter.py)
 
-3. [效果预览](py/output/frequency_filtering_result.png)
+3. 效果预览
+
+   ![](./imgs/frequency_filtering_result.png)
 
 4. 代码结构说明
 
@@ -132,7 +134,11 @@
 
 2. [程序实现](py/task2_diff_filter.py)
 
-3. [效果预览](py/output/differential_filter_result.png)
+3. 效果预览
+
+   ![](./imgs/differential_filter_result_1.png)
+
+   ![differential_filter_result_2](./imgs/differential_filter_result_2.png)
 
 4. 代码结构
 
@@ -176,7 +182,9 @@
 
 2. [程序实现](py/ext3_hpf_sobel_compare.py)
 
-3. [效果预览](py/output/hpf_vs_sobel.png)
+3. 效果预览
+
+   ![](./imgs/hpf_vs_sobel.png)
 
 4. 代码结构：
 
@@ -205,7 +213,9 @@
 
 2. [代码实现](py/ext3_kernel_compare.py)
 
-3. [效果预览](py/output/sobel_kernel_comparison.png)
+3. 效果预览
+
+   ![](./imgs/sobel_kernel_comparison.png)
 
 4. 代码结构：
 
@@ -229,7 +239,9 @@
 
 2. [代码实现](py/ext3_sobel_canny_compare.py)
 
-3. [效果预览](py/output/sobel_vs_canny.png)
+3. 效果预览
+
+   ![](./imgs/sobel_vs_canny.png)
 
 4. 代码结构：
 
@@ -254,11 +266,11 @@
 
 ## 遇到的问题与解决方法
 
-![image-20260519175249607](./images/image-20260519175249607.png)
+![image-20260519175249607](./imgs/image-20260519175249607.png)
 
 设计了如下函数实现自适应截止频率计算
 
-![](./images/compute_cutoff_frequency_energy-1779191101334-2.png)
+![](./imgs/compute_cutoff_frequency_energy-1779191101334-2.png)
 
 ------
 
