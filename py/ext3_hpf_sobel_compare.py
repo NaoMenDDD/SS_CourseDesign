@@ -168,13 +168,12 @@ def normalize_display(img):
         return np.zeros_like(img).astype(np.uint8)
 
 
-def main(input_image_path, output_dir="output", filter_type="ideal", show_output=False):
+def main(input_image_path, output_dir="output", show_output=False):
     """
     主处理流程：比较频域高通滤波与 Sobel 边缘检测
     参数：
         input_image_path: 输入图像路径
         output_dir: 输出目录
-        filter_type: 高通滤波器类型 ("ideal" 或 "gaussian")
         show_output: 是否显示输出图片
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -190,28 +189,24 @@ def main(input_image_path, output_dir="output", filter_type="ideal", show_output
     D0 = compute_cutoff_frequency(fft_shifted, energy_percent=0.95)
     print(f"自适应截止频率 D0 = {D0:.1f} px (用于高通滤波)")
 
-    # ----- 3. 构造并应用高通滤波器 -----
-    if filter_type.lower() == "ideal":
-        H_hp = ideal_highpass_filter(img.shape, D0)
-        filter_name = "Ideal Highpass"
-    else:
-        H_hp = gaussian_highpass_filter(img.shape, D0)
-        filter_name = "Gaussian Highpass"
-
-    img_hp = apply_filter_and_reconstruct(fft_shifted, H_hp)
+    # ----- 3. 同时构造并应用两种高通滤波器 -----
+    H_hp_ideal = ideal_highpass_filter(img.shape, D0)
+    H_hp_gaussian = gaussian_highpass_filter(img.shape, D0)
+    img_hp_ideal = apply_filter_and_reconstruct(fft_shifted, H_hp_ideal)
+    img_hp_gaussian = apply_filter_and_reconstruct(fft_shifted, H_hp_gaussian)
 
     # ----- 4. Sobel 边缘检测 -----
     img_sobel = sobel_edge_detection(img_uint8)
 
-    # ----- 5. 生成对比结果图（1行3列布局：原图、高通、Sobel，外加底部说明）-----
-    fig = plt.figure(figsize=(15, 7), facecolor='white')
-    # 上移整行图片：增大 top 并适当增大 bottom 以整体上移但保持高度
-    gs = fig.add_gridspec(1, 3, hspace=0.2, wspace=0.2,
-                          left=0.05, right=0.95, top=0.94, bottom=0.20)
+    # ----- 5. 生成对比结果图（2x2布局：原图/理想高通/高斯高通/Sobel）-----
+    fig = plt.figure(figsize=(10, 9), facecolor='white')
+    gs = fig.add_gridspec(2, 2, hspace=0.18, wspace=0.05,
+                          left=0.05, right=0.95, top=0.90, bottom=0.19)
 
     ax_orig = fig.add_subplot(gs[0, 0])
-    ax_hp   = fig.add_subplot(gs[0, 1])
-    ax_sobel= fig.add_subplot(gs[0, 2])
+    ax_sobel = fig.add_subplot(gs[0, 1])
+    ax_hp_ideal = fig.add_subplot(gs[1, 0])
+    ax_hp_gaussian = fig.add_subplot(gs[1, 1])
 
     # 显示原图
     img_disp = normalize_display(img)
@@ -219,31 +214,36 @@ def main(input_image_path, output_dir="output", filter_type="ideal", show_output
     ax_orig.set_title("Original Image", fontsize=12, fontweight='medium')
     ax_orig.axis('off')
 
-    # 频域高通滤波结果
-    ax_hp.imshow(img_hp, cmap='gray')
-    ax_hp.set_title(f"Frequency Domain {filter_name}\nD₀={D0:.1f}px", fontsize=11, fontweight='medium')
-    ax_hp.axis('off')
-
     # Sobel 结果
     ax_sobel.imshow(img_sobel, cmap='gray')
     ax_sobel.set_title("Sobel (Gradient Magnitude)", fontsize=11, fontweight='medium')
     ax_sobel.axis('off')
 
+    # 理想高通结果
+    ax_hp_ideal.imshow(img_hp_ideal, cmap='gray')
+    ax_hp_ideal.set_title(f"Frequency Domain Ideal Highpass\nD₀={D0:.1f}px", fontsize=11, fontweight='medium')
+    ax_hp_ideal.axis('off')
+
+    # 高斯高通结果
+    ax_hp_gaussian.imshow(img_hp_gaussian, cmap='gray')
+    ax_hp_gaussian.set_title(f"Frequency Domain Gaussian Highpass\nD₀={D0:.1f}px", fontsize=11, fontweight='medium')
+    ax_hp_gaussian.axis('off')
+
     # 添加底部说明文字（方法对比）
     text_str = (
         "Comparison Summary:\n\n"
-        "• Frequency HPF: global edge enhancement.\n"
-        "  - Ideal HPF: sharp cut-off, causes ringing.\n"
-        "  - Gaussian HPF: smooth transition, no ringing.\n\n"
-        "• Sobel: local gradient approximation,\n"
-        "  simple and fast, thicker edges."
+        "• Frequency-domain HPF (global enhancement):\n"
+        "  - Ideal HPF: sharper transition, stronger details, possible ringing.\n"
+        "  - Gaussian HPF: smoother transition, fewer ringing artifacts.\n\n"
+        "• Sobel (spatial domain): local gradient approximation, fast and stable,\n"
+        "  with relatively thicker edges under strong contrast."
     )
-    fig.text(0.5, 0.05, text_str, ha='center', fontsize=10,
+    fig.text(0.5, 0.055, text_str, ha='center', va='center', fontsize=9.8,
              fontfamily='monospace', color='#1c1c1e',
-             bbox=dict(boxstyle="round,pad=0.4", facecolor='#f2f2f6', edgecolor='none'))
+             bbox=dict(boxstyle="round,pad=0.5", facecolor='#f2f2f6', edgecolor='none'))
 
-    fig.suptitle("Comparison: Frequency Domain Highpass vs. Sobel Edge Detection",
-                 fontsize=14, fontweight='semibold', y=0.96)
+    fig.suptitle("Comparison: Ideal/Gaussian Highpass vs. Sobel Edge Detection",
+                 fontsize=14, fontweight='semibold', y=0.965)
 
     # ----- 6. 保存结果 -----
     output_path = os.path.join(output_dir, "hpf_vs_sobel.png")
@@ -264,13 +264,11 @@ def main(input_image_path, output_dir="output", filter_type="ideal", show_output
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="频域高通滤波 vs Sobel 边缘检测对比")
+    parser = argparse.ArgumentParser(description="高通滤波 vs Sobel 边缘检测对比")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录")
-    parser.add_argument("--filter_type", type=str, default="ideal", choices=["ideal", "gaussian"],
-                        help="高通滤波器类型：ideal 或 gaussian，默认 ideal")
     parser.add_argument("--show", action="store_true", help="显示结果图片")
     args = parser.parse_args()
 
@@ -283,5 +281,5 @@ if __name__ == "__main__":
                 print(f"默认图像不存在，自动选择: {args.input}")
             else:
                 raise FileNotFoundError(f"未找到图像: {args.input}")
-    main(args.input, args.output_dir, args.filter_type, args.show)
+    main(args.input, args.output_dir, args.show)
     print(f"\n完成！输出文件: {args.output_dir}/hpf_vs_sobel.png")

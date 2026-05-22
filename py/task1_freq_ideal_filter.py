@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-19 19:42:24
+LastEditTime: 2026-05-22 10:23:05
 Description: 任务1：频域滤波
 '''
 
@@ -135,13 +135,12 @@ def compute_cutoff_frequency_3db(fft_shifted):
     return float(cutoff_idx[0])
 
 
-def gaussian_lowpass_filter(shape, D0):
+def ideal_lowpass_filter(shape, D0):
     """
-    生成高斯低通滤波器 H_uv
-    H(u,v) = exp(-D(u,v)^2 / (2 * D0^2))
-    # 标题居中
+    生成理想低通滤波器（理想圆形通带）
+    H(u,v) = 1 if D(u,v) <= D0 else 0
     shape: (rows, cols)
-    D0: 截止频率半径（标准差σ = D0）
+    D0: 截止频率半径（像素）
     """
     rows, cols = shape
     crow, ccol = rows // 2, cols // 2
@@ -149,14 +148,16 @@ def gaussian_lowpass_filter(shape, D0):
     v = np.arange(rows)
     U, V = np.meshgrid(u, v)
     D = np.sqrt((U - ccol) ** 2 + (V - crow) ** 2)
-    H_lp = np.exp(-(D ** 2) / (2 * (D0 ** 2)))
+    H_lp = (D <= D0).astype(float)
     return H_lp
 
 
-def gaussian_highpass_filter(shape, D0):
-    """生成高斯高通滤波器: H_hp = 1 - H_lp"""
-    H_lp = gaussian_lowpass_filter(shape, D0)
-    return 1 - H_lp
+def ideal_highpass_filter(shape, D0):
+    """
+    生成理想高通滤波器: H_hp = 1 - H_lp
+    """
+    H_lp = ideal_lowpass_filter(shape, D0)
+    return 1.0 - H_lp
 
 
 def apply_filter_and_reconstruct(fft_shifted, filter_h):
@@ -216,9 +217,9 @@ def main(input_image_path, output_dir="output", show_output=False):
     D0_display = compute_cutoff_frequency_3db(fft_shifted)
     print(f"显示的截止频率（-3dB定义） D0_display = {D0_display:.2f} 像素半径")
 
-    # ----- 4. 生成高斯滤波器（使用 D0_filter）-----
-    H_lp = gaussian_lowpass_filter(img.shape, D0_filter)
-    H_hp = gaussian_highpass_filter(img.shape, D0_filter)
+    # ----- 4. 生成理想滤波器（使用 D0_filter）-----
+    H_lp = ideal_lowpass_filter(img.shape, D0_filter)
+    H_hp = ideal_highpass_filter(img.shape, D0_filter)
 
     # ----- 5. 应用滤波器并重建图像 -----
     fft_lp = fft_shifted * H_lp
@@ -289,7 +290,7 @@ def main(input_image_path, output_dir="output", show_output=False):
         ax.axis('off')
 
     # 将主标题居中
-    fig.suptitle("Frequency Domain Filtering Pipeline", fontsize=24, fontweight='semibold',
+    fig.suptitle("Frequency Domain Ideal Filtering Pipeline", fontsize=24, fontweight='semibold',
                  x=0.57, y=0.93, ha='center', color='#1c1c1e')
     fig.canvas.draw()
 
@@ -324,7 +325,7 @@ def main(input_image_path, output_dir="output", show_output=False):
 
     mid_hp = ((start_point[0] + hp_target[0]) / 2, (start_point[1] + hp_target[1]) / 2)
 
-    fig.text(mid_hp[0] - 0.015, mid_hp[1], f"Gaussian HPF",
+    fig.text(mid_hp[0] - 0.015, mid_hp[1], f"Ideal HPF",
              fontsize=9, ha='left', va='center',
              bbox=dict(boxstyle="round,pad=0.2", facecolor='white', edgecolor='none', alpha=0.8))
 
@@ -332,7 +333,7 @@ def main(input_image_path, output_dir="output", show_output=False):
     _add_arrow(start_point, lp_target)
     mid_lp = ((start_point[0] + lp_target[0]) / 2, (start_point[1] + lp_target[1]) / 2)
 
-    fig.text(mid_lp[0] - 0.015, mid_lp[1], f"Gaussian LPF",
+    fig.text(mid_lp[0] - 0.015, mid_lp[1], f"Ideal LPF",
              fontsize=9, ha='left', va='center',
              bbox=dict(boxstyle="round,pad=0.2", facecolor='white', edgecolor='none', alpha=0.8))
 
@@ -351,7 +352,7 @@ def main(input_image_path, output_dir="output", show_output=False):
     )
 
     # 保存组合图像
-    output_path = os.path.join(output_dir, "frequency_filtering_result.png")
+    output_path = os.path.join(output_dir, "frequency_ideal_filtering_result.png")
     plt.savefig(output_path, bbox_inches='tight', pad_inches=0.28, facecolor='white', dpi=200)
     plt.close(fig)
     if was_interactive:
@@ -372,7 +373,7 @@ def main(input_image_path, output_dir="output", show_output=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="灰度图像频域处理：高斯低通/高通滤波")
+    parser = argparse.ArgumentParser(description="灰度图像频域处理：理想低通/高通滤波")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
@@ -396,4 +397,4 @@ if __name__ == "__main__":
 
     main(args.input, args.output_dir, show_output=args.show)
     print("\n处理完成！输出文件列表：")
-    print(f" - {args.output_dir}/frequency_filtering_result.png")
+    print(f" - {args.output_dir}/frequency_ideal_filtering_result.png")

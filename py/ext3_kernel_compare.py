@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-19 19:29:59
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-19 21:38:37
+LastEditTime: 2026-05-22 11:21:25
 Description: 对比 Sobel 算子不同卷积核大小（3、7、11）的边缘检测效果，生成组合对比图
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -82,7 +82,7 @@ def main(input_image_path, output_dir="output", show_output=False):
     sobel_11 = sobel_gradient_magnitude(img, ksize=11)
 
     # 生成组合图（2 行 2 列布局：原图，3x3，7x7，11x11）
-    fig = plt.figure(figsize=(14, 10), facecolor='white')
+    fig = plt.figure(figsize=(14, 9), facecolor='white')
     gs = fig.add_gridspec(2, 2, hspace=0.1, wspace=0.2,
                           left=0.25, right=0.75, top=0.90, bottom=0.10)
 
@@ -114,7 +114,7 @@ def main(input_image_path, output_dir="output", show_output=False):
     ax_ksize7.axis('off')
 
     # 总标题及说明
-    fig.suptitle("Sobel Edge Detection: Effect of Kernel Size", fontsize=16, fontweight='semibold', y=0.96)
+    fig.suptitle("Sobel Edge Detection: Effect of Kernel Size", fontsize=16, fontweight='semibold', y=0.97)
     fig.text(0.5, 0.03, "Larger kernel provides stronger smoothing but may lose fine details and thicken edges.",
              fontsize=10, ha='center', color='#8e8e93', style='italic')
 
