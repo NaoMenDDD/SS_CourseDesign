@@ -2,8 +2,8 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-13 10:42:57
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @LastEditTime: 2026-05-19 08:42:48
- * @Description: 扩展任务一：振铃效应对比 - 问题建模与理论方法（MathJax 版）
+ * @LastEditTime: 2026-05-22 12:21:53
+ * @Description: 扩展任务一：振铃效应对比 - 理论与建模 & 预期实验结果
 -->
 
 <!DOCTYPE html>
@@ -12,7 +12,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>扩展任务一：振铃效应对比 - 问题建模与理论方法</title>
+    <title>扩展任务一：振铃效应对比 - 理论与建模</title>
     <!-- MathJax 专业公式渲染 -->
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
@@ -315,12 +315,15 @@
             <p class="subtitle">对比理想低通、巴特沃斯低通、高斯低通三种滤波器的振铃效应，分析频域截断特性与空域伪影的关系</p>
         </div>
 
-        <!-- 第一节：三种滤波器的传递函数 -->
+        <!-- 第一部分：理论与建模 -->
         <div class="section" id="section1">
             <div class="card">
-                <h2><span class="num">1</span> 问题建模：三种低通滤波器的数学定义</h2>
+                <h2><span class="num">1</span> 理论与建模</h2>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">三种低通滤波器的数学定义（第6章）</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 16px;">
-                    振铃效应的根源在于频域的<strong>陡峭截断</strong>。不同滤波器对高频的衰减方式决定了空域是否产生虚假波纹。</p>
+                    振铃效应的根源在于频域的<strong>陡峭截断</strong>。不同滤波器对高频的衰减方式决定了空域是否产生虚假波纹。
+                </p>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
                     <!-- 理想低通 -->
                     <div
@@ -331,8 +334,7 @@
                             \]
                         </div>
                         <p style="font-size:0.82rem; color:var(--text-secondary);">频域<strong>硬截断</strong>，对应空域sinc函数卷积 →
-                            <strong style="color:var(--color-ideal);">振铃严重</strong>
-                        </p>
+                            <strong style="color:var(--color-ideal);">振铃严重</strong></p>
                     </div>
                     <!-- 巴特沃斯低通 -->
                     <div
@@ -355,13 +357,9 @@
                                 style="color:var(--color-gauss);">无振铃</strong></p>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 第二节：频率响应曲线对比 -->
-        <div class="section" id="section2">
-            <div class="card">
-                <h2><span class="num">2</span> 理论方法：频率响应曲线与振铃机制</h2>
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">频率响应与振铃机制（第4章、第6章）
+                </h3>
                 <div class="chart-row">
                     <div class="canvas-wrapper">
                         <canvas id="freqRespCanvas" width="400" height="280"></canvas>
@@ -372,13 +370,10 @@
                         <div class="canvas-caption">对应的空域冲激响应 (振铃可视化)</div>
                     </div>
                 </div>
-                <div style="margin-top:20px;">
-                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">振铃效应产生的物理机制</h3>
-                    <p style="color:var(--text-secondary);">
-                        <strong>吉布斯现象：</strong>当频域存在<strong>不连续点</strong>（理想低通的硬截断），其傅里叶逆变换（空域冲激响应）会产生无限振荡的sinc函数旁瓣。
-                        这些旁瓣在卷积时会在图像边缘附近产生<strong>虚假的明暗波纹</strong>——即振铃效应。
-                        巴特沃斯滤波器的平滑过渡可抑制旁瓣幅度，高斯滤波器因无限光滑而完全消除振铃。
-                    </p>
+                <p style="color:var(--text-secondary); margin-top:20px;">
+                    <strong>吉布斯现象：</strong>当频域存在<strong>不连续点</strong>（理想低通的硬截断），其傅里叶逆变换（空域冲激响应）会产生无限振荡的sinc函数旁瓣。这些旁瓣在卷积时会在图像边缘附近产生<strong>虚假的明暗波纹</strong>——即振铃效应。巴特沃斯滤波器的平滑过渡可抑制旁瓣幅度，高斯滤波器因无限光滑而完全消除振铃。
+                </p>
+                <div style="margin-top:14px;">
                     <span class="knowledge-badge">吉布斯现象 · 第4章</span>
                     <span class="knowledge-badge">滤波器设计 · 第6章</span>
                     <span class="knowledge-badge">冲激响应与卷积</span>
@@ -386,10 +381,10 @@
             </div>
         </div>
 
-        <!-- 第三节：综合对比 -->
-        <div class="section" id="section3">
+        <!-- 第二部分：预期实验结果/效果对比 -->
+        <div class="section" id="section2">
             <div class="card">
-                <h2><span class="num">3</span> 综合对比：振铃程度与滤波效果</h2>
+                <h2><span class="num">2</span> 预期实验结果：振铃程度与滤波效果对比</h2>
                 <div class="compare-table">
                     <div class="th">滤波器类型</div>
                     <div class="th">频域过渡</div>
@@ -415,9 +410,7 @@
                 <span class="knowledge-badge">吉布斯现象抑制</span>
             </div>
         </div>
-        <div class="footer-note">
-            信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 振铃效应对比 · 问题建模与理论方法
-        </div>
+        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 振铃效应对比 · 理论与建模</div>
     </div>
     <script>
         (() => {

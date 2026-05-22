@@ -2,8 +2,10 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-13 10:39:46
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @LastEditTime: 2026-05-19 09:10:18
- * @Description: 任务一：灰度图像频域变换与滤波 - 问题建模与理论方法
+ * @LastEditTime: 2026-05-22 12:10:13
+ * @Description: 任务一：灰度图像频域变换与滤波 - 理论与建模 & 预期实验结果
+ * 
+ * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
 -->
 
 <!DOCTYPE html>
@@ -12,11 +14,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>任务一：灰度图像频域变换与滤波 - 问题建模与理论方法</title>
+    <title>任务一：灰度图像频域变换与滤波 - 理论与建模</title>
     <!-- MathJax 专业公式渲染 -->
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
-        /* 原有样式保持不变，仅增加 equation 内字体和间距微调 */
+        /* 原有样式保持不变 */
         :root {
             --bg: #ffffff;
             --surface: #f5f5f7;
@@ -390,26 +392,28 @@
         <div class="hero" id="hero">
             <span class="tag">信号与系统 · 课设</span>
             <h1>任务一：灰度图像频域变换与滤波</h1>
-            <p class="subtitle">将灰度图像变换至二维频域，分析频谱并确定截止频率</p>
-            <p class="subtitle">设计低通/高通滤波器，对比滤波前后空域图像的差异</p>
+            <p class="subtitle">基于傅里叶变换的二维频域分析及低通/高通滤波</p>
         </div>
 
-        <!-- 第一部分：问题建模 - 系统框图 -->
+        <!-- 合并后的第一部分：理论与建模（系统框图、核心方程、频谱分析、滤波器定义） -->
         <div class="section" id="section1">
             <div class="card">
-                <h2><span class="num">1</span> 问题建模：系统流程与方程</h2>
+                <h2><span class="num">1</span> 理论与建模</h2>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">系统流程与核心方程</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 16px;">
-                    整体处理链路：从空域图像出发，通过二维傅里叶变换进入频域，应用滤波器后逆变换回空域，最后对比原图与处理结果。</p>
+                    根据第4章（连续时间傅里叶变换）与第6章（频域滤波）的思想，将二维灰度图像视为离散空间信号，通过傅里叶变换将其分解为不同频率的正弦分量，在频域进行加权处理后再反变换回空域，以实现滤波效果。
+                </p>
                 <div class="block-diagram">
-                    <div class="block accent">输入图像<br><small style="font-weight:400;">f(x,y)</small></div>
+                    <div class="block accent">输入图像<br><small>f(x,y)</small></div>
                     <span class="arrow">→</span>
-                    <div class="block">2D FFT<br><small style="font-weight:400;">频移</small></div>
+                    <div class="block">2D DFT<br><small>频移</small></div>
                     <span class="arrow">→</span>
-                    <div class="block accent">频域滤波<br><small style="font-weight:400;">H(u,v)·F(u,v)</small></div>
+                    <div class="block accent">频域滤波<br><small>H(u,v)·F(u,v)</small></div>
                     <span class="arrow">→</span>
-                    <div class="block">2D IFFT<br><small style="font-weight:400;">逆变换</small></div>
+                    <div class="block">2D IFFT<br><small>逆变换</small></div>
                     <span class="arrow">→</span>
-                    <div class="block accent">输出图像<br><small style="font-weight:400;">g(x,y)</small></div>
+                    <div class="block accent">输出图像<br><small>g(x,y)</small></div>
                 </div>
                 <div style="display:flex; justify-content:center; gap:40px; flex-wrap:wrap; align-items:center;">
                     <span class="block-label">空域</span>
@@ -423,30 +427,38 @@
                     <span class="block-label">空域</span>
                 </div>
                 <div style="margin-top: 28px;">
-                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心数学方程</h3>
                     <div class="equation">
                         \[ F(u,v) = \sum_{x=0}^{M-1} \sum_{y=0}^{N-1} f(x,y) \,
                         \exp\!\left(-j2\pi\left(\frac{ux}{M}+\frac{vy}{N}\right)\right) \]
                     </div>
-                    <div class="eq-caption">二维离散傅里叶变换 (2D DFT) —— 将空间亮度分布分解为不同频率的正弦分量。</div>
+                    <div class="eq-caption">二维离散傅里叶变换 (2D DFT) —— 将空间信号分解为复指数信号的线性组合。</div>
                     <div class="equation">
-                        \[ G(u,v) = H(u,v) \cdot F(u,v) \quad \text{(频域逐点相乘)} \]
+                        \[ G(u,v) = H(u,v) \cdot F(u,v) \]
                     </div>
-                    <div class="eq-caption">频域滤波的本质：对每个频率分量加权。低通 H 抑制高频，高通 H 抑制低频。</div>
+                    <div class="eq-caption">频域滤波：频域乘积对应空域卷积（卷积定理，教材第4章）。</div>
                     <div class="equation">
                         \[ g(x,y) = \frac{1}{MN} \sum_{u=0}^{M-1} \sum_{v=0}^{N-1} G(u,v) \,
                         \exp\!\left(j2\pi\left(\frac{ux}{M}+\frac{vy}{N}\right)\right) \]
                     </div>
                     <div class="eq-caption">二维逆傅里叶变换 (2D IFFT) —— 重建滤波后的空域图像。</div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 第二部分：理论方法 - 频谱分析与截止频率 -->
-        <div class="section" id="section2">
-            <div class="card">
-                <h2><span class="num">2</span> 理论方法：频谱解读与截止频率</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 20px;">对频谱幅度 |F(u,v)| 进行可视化分析，确定图像的主要频率成分分布及有效带宽。
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">频域滤波器的数学定义（第6章）</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 12px;">以下为理想低通和高通滤波器的传递函数，实际实现中常采用高斯型滤波器以避免振铃效应。
+                </p>
+                <div class="equation" style="border-left-color:#3b8c6e;">
+                    \[ H_{\text{lp}}(u,v) = \begin{cases} 1, & D(u,v) \le D_0 \\ 0, & D(u,v) > D_0 \end{cases} \]
+                </div>
+                <div class="eq-caption">理想低通滤波器（ILPF）：在截止频率 \(D_0\) 内完全保留，之外完全抑制。</div>
+                <div class="equation" style="border-left-color:#c76b3d;">
+                    \[ H_{\text{hp}}(u,v) = 1 - H_{\text{lp}}(u,v) = \begin{cases} 0, & D(u,v) \le D_0 \\ 1, & D(u,v) >
+                    D_0 \end{cases} \]
+                </div>
+                <div class="eq-caption">理想高通滤波器（IHPF）：抑制低频，保留高频，用于边缘增强。</div>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">频谱分析与截止频率（第6章）</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                    图像频谱的中心对应低频（直流分量），外围对应高频。通过径向平均功率谱确定截止频率 \(D_0\)，即保留主要能量（或-3dB点）。
                 </p>
                 <div class="spectrum-demo">
                     <div class="canvas-wrapper">
@@ -458,77 +470,78 @@
                         <div class="canvas-caption">径向平均功率谱曲线</div>
                     </div>
                 </div>
-                <div style="margin-top: 20px;">
-                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:12px;">截止频率判定方法</h3>
+                <div>
                     <div class="equation">
                         \[ P(r) = \frac{1}{N_r}\sum_{\theta} |F(r\cos\theta, r\sin\theta)|^2 \]
                     </div>
-                    <div class="eq-caption">径向平均功率谱：沿半径 r 统计所有方向的能量均值。当 P(r) 降至峰值的 1/2（−3dB）的 r 即为截止频率。</div>
-                    <p style="color: var(--text-secondary); margin-top:16px;">
-                        <strong>物理意义：</strong>低频（中心）对应图像整体亮度和缓慢渐变；中频对应纹理细节；高频（外围）对应锐利边缘和噪声。截止频率是区分“保留”与“滤除”的阈值。
-                    </p>
-                    <div style="margin-top:14px;">
-                        <span class="knowledge-badge">第4章 · 傅里叶变换</span>
-                        <span class="knowledge-badge">第6章 · 频率响应与带宽</span>
-                        <span class="knowledge-badge">频谱分析与可视化</span>
+                    <div class="eq-caption">径向平均功率谱：反映不同频率半径上的能量分布。截止频率 \(D_0\) 取能量降至峰值 \(-3\text{dB}\) 或能量累积达95%的半径。
                     </div>
+                    <p style="color: var(--text-secondary); margin-top:16px;">
+                        <strong>物理意义：</strong>低频对应图像整体亮度与缓变区域（如背景），高频对应边缘、纹理与噪声。截止频率 \(D_0\) 是区分“保留”与“滤除”的阈值。
+                    </p>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <span class="knowledge-badge">第4章 · 傅里叶变换</span>
+                    <span class="knowledge-badge">第6章 · 频率响应与带宽</span>
+                    <span class="knowledge-badge">卷积定理 · 频谱分析</span>
                 </div>
             </div>
         </div>
 
-        <!-- 第三部分：低通与高通滤波理论 -->
+        <!-- 第三部分：预期实验结果/效果对比 -->
         <div class="section" id="section3">
             <div class="card">
-                <h2><span class="num">3</span> 低通滤波与高通滤波：原理与效果</h2>
+                <h2><span class="num">2</span> 预期实验结果：低通与高通滤波对比</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                    通过程序实现高斯低通滤波器（LPF）和高斯高通滤波器（HPF），对比原图与滤波后图像的空域差异及频域变化。
+                </p>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px; align-items: start;">
                     <div>
                         <h3 style="font-weight:700; font-size:1rem; color:#3b8c6e; margin-bottom:10px;">低通滤波 (LPF)</h3>
-                        <div class="equation" style="border-left-color:#3b8c6e;">
-                            \[ H_{\text{lp}}(u,v) = \begin{cases} 1, & D(u,v) \le D_0 \\ 0, & D(u,v) > D_0 \end{cases}
-                            \]
-                        </div>
                         <p style="font-size:0.9rem; color:var(--text-secondary);">
-                            理想低通：保留低频（平滑区域），截断高频（边缘/噪声）。<br>结果：图像变模糊、柔和，抑制噪声。<br>缺陷：陡峭截断导致<strong>振铃效应</strong>（空域出现虚假波纹）。
+                            <strong>效果：</strong>图像变模糊、平滑，噪声被抑制；<br>
+                            <strong>频域表现：</strong>频谱外围（高频）亮度下降；<br>
+                            <strong>课程关联：</strong>对应教材第6章的“平滑滤波器”，牺牲细节换取噪声抑制。
                         </p>
-                        <span class="knowledge-badge">理想滤波器</span>
-                        <span class="knowledge-badge">卷积定理 · 第4章</span>
                     </div>
                     <div>
                         <h3 style="font-weight:700; font-size:1rem; color:#c76b3d; margin-bottom:10px;">高通滤波 (HPF)</h3>
-                        <div class="equation" style="border-left-color:#c76b3d;">
-                            \[ H_{\text{hp}}(u,v) = 1 - H_{\text{lp}}(u,v) \]
-                        </div>
                         <p style="font-size:0.9rem; color:var(--text-secondary);">
-                            理想高通：保留高频（边缘细节），移除低频（平滑区域）。<br>结果：图像仅剩边缘轮廓，平坦区域变暗。<br>实践中常保留部分直流分量（高频增强）以避免过暗。
+                            <strong>效果：</strong>仅保留边缘与细节，平坦区域变暗（或接近零）；<br>
+                            <strong>频域表现：</strong>频谱中心（低频）被抑制；<br>
+                            <strong>课程关联：</strong>相当于高通滤波器，常用于边缘增强（教材第6章）。
                         </p>
-                        <span class="knowledge-badge">高通滤波 · 第6章</span>
-                        <span class="knowledge-badge">高频增强技术</span>
                     </div>
                 </div>
                 <div style="margin-top:24px;">
-                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">滤波前后对比维度</h3>
+                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">实验结果对比维度</h3>
                     <div class="comparison-grid">
                         <div class="compare-item">
-                            <div class="label">空域视觉</div>
-                            <div class="desc">低通后平滑柔和，高通后边缘突出、背景暗沉</div>
+                            <div class="label">空域视觉差异</div>
+                            <div class="desc">低通：整体柔化、模糊；高通：边缘突出、背景暗沉</div>
                         </div>
                         <div class="compare-item">
                             <div class="label">差异图</div>
-                            <div class="desc">|原图 − 滤波结果| 亮区表示被移除的频率成分</div>
+                            <div class="desc">|原图 − 滤波结果|，亮区表示被滤除的频率成分</div>
                         </div>
                         <div class="compare-item">
-                            <div class="label">频域能量</div>
-                            <div class="desc">低通后频谱外围变暗；高通后中心变暗</div>
+                            <div class="label">频域能量分布</div>
+                            <div class="desc">低通后高频能量降低；高通后低频能量降低</div>
                         </div>
                         <div class="compare-item">
                             <div class="label">量化指标</div>
-                            <div class="desc">MSE / SSIM 数值衡量失真程度</div>
+                            <div class="desc">MSE / SSIM 评价滤波失真程度</div>
                         </div>
                     </div>
                 </div>
+                <p style="color: var(--text-secondary); margin-top: 16px;">
+                    预期结果：低通滤波能有效去除高频噪声，但会损失边缘细节；高通滤波能突出边缘，但对噪声敏感。通过调整截止频率 \(D_0\) 可在平滑与细节保留之间取得平衡。
+                </p>
+                <span class="knowledge-badge">理论对比</span>
             </div>
         </div>
-        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 频域变换与滤波 · 问题建模与理论方法</div>
+        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 频域变换与滤波 · 理论与建模</div>
     </div>
     <script>
         (() => {

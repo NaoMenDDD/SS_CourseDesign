@@ -2,12 +2,9 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-19 20:15:25
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @LastEditTime: 2026-05-19 20:58:18
- * @Description: Sobel 边缘检测：卷积核大小对比（3、7、11） - 对比 Sobel 算子不同核大小对边缘检测结果的影响，分析平滑性、边缘粗细与噪声抑制的权衡
- * 
- * Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
+ * @LastEditTime: 2026-05-22 12:28:17
+ * @Description: Sobel 边缘检测：卷积核大小对比（3、7、11） - 理论与建模 & 预期实验结果
 -->
-
 
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -15,7 +12,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sobel 边缘检测：卷积核大小对比（3、7、11）</title>
+    <title>Sobel 边缘检测：卷积核大小对比 - 理论与建模</title>
     <!-- MathJax 专业公式渲染 -->
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
@@ -309,10 +306,12 @@
             <p class="subtitle">对比 Sobel 算子不同核大小（3、7、11）对边缘检测结果的影响，分析平滑性、边缘粗细与噪声抑制的权衡</p>
         </div>
 
-        <!-- 第一节：问题建模 -->
+        <!-- 第一部分：理论与建模 -->
         <div class="section" id="section1">
             <div class="card">
-                <h2><span class="num">1</span> Sobel 算子与核尺寸</h2>
+                <h2><span class="num">1</span> 理论与建模</h2>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">Sobel 算子与核尺寸</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 16px;">
                     Sobel 算子是一种离散微分算子，通过计算图像亮度函数的梯度来检测边缘。其核大小（ksize）决定了参与梯度计算的邻域范围，直接影响边缘的平滑程度、定位精度和噪声鲁棒性。
                 </p>
@@ -341,15 +340,8 @@
                 <p style="color: var(--text-secondary); margin-top: 12px;">
                     <strong>核大小的影响机制：</strong> 更大的核覆盖更多的像素，相当于在求导前先进行更强的平滑滤波。因此，核越大，对噪声的抑制能力越强，但边缘变得越粗，细节丢失越严重。
                 </p>
-                <span class="knowledge-badge">离散梯度近似</span>
-                <span class="knowledge-badge">平滑与边缘定位</span>
-            </div>
-        </div>
 
-        <!-- 第二节：理论方法 -->
-        <div class="section" id="section2">
-            <div class="card">
-                <h2><span class="num">2</span> 核大小与边缘检测性能</h2>
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">核大小与边缘检测性能</h3>
                 <div class="demo-grid">
                     <div class="canvas-wrapper">
                         <canvas id="originalImage" width="280" height="200"></canvas>
@@ -394,15 +386,16 @@
                     <strong>数学本质：</strong> 增大 Sobel
                     核等价于在更大的邻域内近似梯度，平滑作用增强，因此大核适用于强噪声环境或对边缘精确位置要求不高的任务；小核保留更多细节，适合精细边缘检测。
                 </p>
+                <span class="knowledge-badge">离散梯度近似</span>
                 <span class="knowledge-badge">梯度与尺度空间</span>
                 <span class="knowledge-badge">多尺度边缘检测</span>
             </div>
         </div>
 
-        <!-- 第三节：结论与选型建议（笼统概括） -->
-        <div class="section" id="section3">
+        <!-- 第二部分：预期实验结果/效果对比 -->
+        <div class="section" id="section2">
             <div class="card">
-                <h2><span class="num">3</span> 结论与工程选型建议</h2>
+                <h2><span class="num">2</span> 预期实验结果：结论与工程选型建议</h2>
                 <p style="color: var(--text-secondary);">
                     Sobel 算子的核大小是影响边缘检测效果的关键参数。<br>
                     <strong>小尺寸核（如 3×3）</strong>：边缘定位精度高，细节丰富，但对噪声敏感，适合清晰、低噪声的图像。<br>
@@ -413,9 +406,7 @@
                 <span class="knowledge-badge">工程实践</span>
             </div>
         </div>
-        <div class="footer-note">
-            信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; Sobel 核大小对比 · 理论建模与模拟分析
-        </div>
+        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; Sobel 核大小对比 · 理论与建模</div>
     </div>
 
     <script>

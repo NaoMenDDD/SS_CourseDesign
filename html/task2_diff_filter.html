@@ -2,8 +2,8 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-13 10:40:05
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @LastEditTime: 2026-05-19 00:45:47
- * @Description: 任务二：差分滤波器设计 - 问题建模与理论方法
+ * @LastEditTime: 2026-05-22 12:08:58
+ * @Description: 任务二：差分滤波器设计 - 理论与建模 & 预期实验结果
 -->
 
 <!DOCTYPE html>
@@ -12,10 +12,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>任务二：差分滤波器 - 问题建模与理论方法</title>
+    <title>任务二：差分滤波器 - 理论与建模</title>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
-        /* 与任务一类似，保留原有样式，但方程部分改用 MathJax */
         :root {
             --bg: #ffffff;
             --surface: #f5f5f7;
@@ -368,15 +367,18 @@
         <div class="hero" id="hero">
             <span class="tag">信号与系统 · 课设</span>
             <h1>任务二：差分滤波器设计</h1>
-            <p class="subtitle">在频域构造差分滤波器，实现灰度图像的二维一阶差分运算，提取图像梯度信息</p>
+            <p class="subtitle">基于傅里叶变换微分性质的频域一阶差分算子</p>
         </div>
 
-        <!-- 第一节：问题建模 -->
+        <!-- 第一部分：理论与建模 -->
         <div class="section" id="section1">
             <div class="card">
-                <h2><span class="num">1</span> 问题建模：频域差分滤波系统</h2>
+                <h2><span class="num">1</span> 理论与建模</h2>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">频域差分滤波系统</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 16px;">
-                    利用傅里叶变换的<strong>微分性质</strong>，在频域通过乘法实现空域的差分运算，避免显式的空域卷积。</p>
+                    依据第4章介绍的傅里叶变换<strong>微分性质</strong>，空域求导对应于频域乘以 \(j2\pi\) 乘以频率变量。利用该性质，可在频域实现图像的差分运算，从而提取梯度信息。
+                </p>
                 <div class="block-diagram">
                     <div class="block accent">输入图像<br><small>f(x,y)</small></div>
                     <span class="arrow">→</span>
@@ -388,93 +390,101 @@
                     <span class="arrow">→</span>
                     <div class="block accent">梯度幅值图<br><small>|∇f(x,y)|</small></div>
                 </div>
-                <div style="margin-top: 28px;">
-                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心数学方程：频域微分性质</h3>
-                    <div class="equation">
-                        \[ \frac{\partial f}{\partial x} \;\leftrightarrow\; j2\pi u \cdot F(u,v) \qquad \frac{\partial
-                        f}{\partial y} \;\leftrightarrow\; j2\pi v \cdot F(u,v) \]
-                    </div>
-                    <div class="eq-caption">傅里叶变换的微分性质：空域求导 ⇔ 频域乘以 j·2π·频率变量。这是差分滤波器的理论基础。</div>
-                    <div class="equation">
-                        \[ H_{\text{diff}_x}\ (u,v) = j2\pi u / M \qquad H_{\text{diff}_y}\ (u,v) = j2\pi v / N \]
-                    </div>
-                    <div class="eq-caption">水平和垂直差分滤波器的频域传递函数。M、N为图像尺寸，u、v为离散频率坐标（中心化后范围为 −M/2 ~ M/2）。</div>
-                    <div class="equation">
-                        \[ |\nabla f(x,y)| = \sqrt{ \left(\frac{\partial f}{\partial x}\right)^2 + \left(\frac{\partial
-                        f}{\partial y}\right)^2 } = \sqrt{ \left[\mathcal{F}^{-1}\{H_{\text{diff}_x}\ F\}\right]^2 +
-                        \left[\mathcal{F}^{-1}\{H_{\text{diff}_y}\ F\}\right]^2 } \]
-                    </div>
-                    <div class="eq-caption">梯度幅值：综合水平和垂直差分结果，得到边缘强度图。</div>
-                </div>
-            </div>
-        </div>
 
-        <!-- 第二节：理论方法 -->
-        <div class="section" id="section2">
-            <div class="card">
-                <h2><span class="num">2</span> 理论方法：差分滤波器的构造与性质</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                    差分滤波器本质上是<strong>频率域的梯度算子</strong>，它对高频分量施加线性增益，频率越高增益越大。</p>
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">核心数学方程：频域微分性质（第4章）
+                </h3>
+                <div class="equation">
+                    \[ \frac{\partial f}{\partial x} \;\leftrightarrow\; j2\pi u \cdot F(u,v) \qquad \frac{\partial
+                    f}{\partial y} \;\leftrightarrow\; j2\pi v \cdot F(u,v) \]
+                </div>
+                <div class="eq-caption">傅里叶变换的微分性质：空域求导 ⇔ 频域乘以 \(j2\pi \times\) 频率变量。</div>
+                <div class="equation">
+                    \[ H_{\text{diff}_x}(u,v) = j2\pi u / M,\qquad H_{\text{diff}_y}(u,v) = j2\pi v / N \]
+                </div>
+                <div class="eq-caption">水平和垂直差分滤波器的频域传递函数。M、N为图像尺寸，u、v为中心化后的频率坐标。</div>
+                <div class="equation">
+                    \[ |\nabla f(x,y)| = \sqrt{ \left(\frac{\partial f}{\partial x}\right)^2 + \left(\frac{\partial
+                    f}{\partial y}\right)^2 } = \sqrt{ \left[\mathcal{F}^{-1}\{H_{\text{diff}_x}F\}\right]^2 +
+                    \left[\mathcal{F}^{-1}\{H_{\text{diff}_y}F\}\right]^2 } \]
+                </div>
+                <div class="eq-caption">梯度幅值：综合水平与垂直差分结果，得到边缘强度图。</div>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">差分滤波器的频率响应与性质（第6章）
+                </h3>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                    差分滤波器本质上是<strong>频率域的梯度算子</strong>，其频率响应 \(|H_{\text{diff}}(u,v)| \propto
+                    \sqrt{u^2+v^2}\)，即高频分量获得更高增益。这对应教材第6章中关于“微分器”的频率响应特性。
+                </p>
                 <div class="spectrum-demo">
                     <div class="canvas-wrapper"><canvas id="filterResponseCanvas" width="280" height="280"></canvas>
-                        <div class="canvas-caption">差分滤波器 |H<sub>diff</sub>(u,v)| 响应</div>
+                        <div class="canvas-caption">差分滤波器幅度响应 \(|H_{\text{d iff}}(u,v)|\)（线性增长）</div>
                     </div>
                     <div class="canvas-wrapper"><canvas id="gradientDemoCanvas" width="280" height="280"></canvas>
-                        <div class="canvas-caption">梯度幅值示意图 (边缘亮显)</div>
+                        <div class="canvas-caption">梯度幅值模拟示意图 (边缘高亮)</div>
                     </div>
                 </div>
+
                 <div style="margin-top:20px;">
-                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:12px;">与空域差分算子的等价关系</h3>
-                    <div class="comparison-grid">
-                        <div class="compare-item">
-                            <div class="label">空域Sobel</div>
-                            <div class="desc">3×3卷积核，近似梯度计算，含平滑效果</div>
-                        </div>
-                        <div class="compare-item">
-                            <div class="label">频域差分</div>
-                            <div class="desc">直接乘以频率变量，无平滑，对噪声更敏感</div>
-                        </div>
-                        <div class="compare-item">
-                            <div class="label">中心差分</div>
-                            <div class="desc">f(x+1)−f(x−1)，对应频域 j·sin(2πu/M)</div>
-                        </div>
-                        <div class="compare-item">
-                            <div class="label">物理意义</div>
-                            <div class="desc">提取亮度突变区域，边缘越锐利响应越强</div>
-                        </div>
-                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                        <strong>物理意义：</strong>差分滤波器通过<strong>增强图像中亮度变化剧烈的区域（边缘、纹理）</strong>来提取结构信息。
+                        与高通滤波器不同，差分滤波器的<strong>增益随频率线性递增</strong>，因此能够更细腻地反映边缘强度和局部对比度。
+                        这使得差分滤波器在边缘检测、纹理分析等任务中具有重要应用价值。
+                    </p>
                     <div style="margin-top:14px;">
-                        <span class="knowledge-badge">傅里叶变换微分性质 · 第4章</span>
-                        <span class="knowledge-badge">频域滤波设计 · 第6章</span>
+                        <span class="knowledge-badge">第4章 · 傅里叶变换微分性质</span>
+                        <span class="knowledge-badge">第6章 · 频率响应与滤波</span>
                         <span class="knowledge-badge">梯度与边缘检测</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 第三节：结果解读 -->
-        <div class="section" id="section3">
+        <!-- 第二部分：预期实验结果/效果对比 -->
+        <div class="section" id="section2">
             <div class="card">
-                <h2><span class="num">3</span> 结果解读：梯度分量与幅值图</h2>
+                <h2><span class="num">2</span> 预期实验结果：梯度分量与幅值图</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                    通过程序实现频域差分滤波器，分别计算水平梯度 \(\partial f/\partial x\)、垂直梯度 \(\partial f/\partial y\) 及梯度幅值 \(|\nabla
+                    f|\)。
+                </p>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
                     <div>
-                        <h3 style="font-weight:700; font-size:1rem; color:#7b4fbf; margin-bottom:10px;">水平梯度 ∂f/∂x</h3>
+                        <h3 style="font-weight:700; font-size:1rem; color:#7b4fbf; margin-bottom:10px;">水平梯度 \(\partial
+                            f/\partial x\)</h3>
                         <p style="font-size:0.9rem; color:var(--text-secondary);">
-                            检测<strong>垂直方向</strong>的边缘（左右亮度变化）。垂直边缘（如建筑物竖线）响应强烈，水平边缘响应弱。</p>
+                            检测<strong>垂直方向</strong>的边缘（左右亮度变化）。垂直边缘（如建筑物竖线）响应强烈，水平边缘响应弱。<br>
+                            <strong>预期效果：</strong>输出图像中垂直边缘呈现高亮。
+                        </p>
                     </div>
                     <div>
-                        <h3 style="font-weight:700; font-size:1rem; color:#7b4fbf; margin-bottom:10px;">垂直梯度 ∂f/∂y</h3>
+                        <h3 style="font-weight:700; font-size:1rem; color:#7b4fbf; margin-bottom:10px;">垂直梯度 \(\partial
+                            f/\partial y\)</h3>
                         <p style="font-size:0.9rem; color:var(--text-secondary);">
-                            检测<strong>水平方向</strong>的边缘（上下亮度变化）。水平边缘（如地平线）响应强烈，垂直边缘响应弱。</p>
+                            检测<strong>水平方向</strong>的边缘（上下亮度变化）。水平边缘（如地平线）响应强烈，垂直边缘响应弱。<br>
+                            <strong>预期效果：</strong>输出图像中水平边缘呈现高亮。
+                        </p>
                     </div>
                 </div>
                 <p style="color:var(--text-secondary); margin-top:16px;">
-                    <strong>梯度幅值图</strong>综合了两个方向的差分结果，亮区对应图像中亮度剧烈变化的位置（边缘、轮廓、纹理）。与高通滤波不同，差分滤波器对频率的增益是<strong>线性递增</strong>的，而非二值截断，因此边缘强度与局部对比度成正比。
+                    <strong>梯度幅值图</strong>综合两个方向的差分结果，亮区对应图像中亮度剧烈变化的位置（边缘、轮廓、纹理）。与高通滤波不同，差分滤波器对频率的增益是<strong>线性递增</strong>的（而非二值截断），因此边缘强度与局部对比度成正比。
                 </p>
-                <span class="knowledge-badge">偏导数与梯度</span><span class="knowledge-badge">边缘强度映射</span>
+                <div style="margin-top:16px;">
+                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">实验对比维度</h3>
+                    <div class="comparison-grid">
+                        <div class="compare-item">
+                            <div class="label">空域视觉</div>
+                            <div class="desc">水平/垂直梯度图显示特定方向边缘；幅值图显示所有边缘</div>
+                        </div>
+                        <div class="compare-item">
+                            <div class="label">频域增益</div>
+                            <div class="desc">线性增长，高频放大明显</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="knowledge-badge">理论对比</span>
             </div>
         </div>
-        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 差分滤波器 · 问题建模与理论方法</div>
+        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 差分滤波器 · 理论与建模</div>
     </div>
     <script>
         (() => {

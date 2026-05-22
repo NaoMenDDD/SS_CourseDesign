@@ -2,8 +2,8 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-13 10:43:04
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @LastEditTime: 2026-05-19 01:00:59
- * @Description: 扩展任务二：同态滤波光照校正 - 问题建模与理论方法（MathJax 版）
+ * @LastEditTime: 2026-05-22 12:23:58
+ * @Description: 扩展任务二：同态滤波光照校正 - 理论与建模 & 预期实验结果
 -->
 
 <!DOCTYPE html>
@@ -12,7 +12,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>扩展任务二：同态滤波光照校正 - 问题建模与理论方法</title>
+    <title>扩展任务二：同态滤波光照校正 - 理论与建模</title>
     <!-- MathJax 专业公式渲染 -->
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
@@ -352,10 +352,12 @@
             <p class="subtitle">基于光照-反射模型的同态滤波，在频域同时压缩光照动态范围并增强反射细节，校正不均匀光照</p>
         </div>
 
-        <!-- 第一节：问题建模 -->
+        <!-- 第一部分：理论与建模 -->
         <div class="section" id="section1">
             <div class="card">
-                <h2><span class="num">1</span> 问题建模：光照-反射模型与同态系统</h2>
+                <h2><span class="num">1</span> 理论与建模</h2>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">光照-反射模型与同态系统</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 16px;">图像可建模为<strong>光照分量 i(x,y)</strong> 与
                     <strong>反射分量 r(x,y)</strong> 的乘积。对数变换将乘法转为加法，使线性滤波成为可能。
                 </p>
@@ -374,31 +376,25 @@
                     <span class="arrow">→</span>
                     <div class="block accent">g(x,y)<br><small>校正后</small></div>
                 </div>
-                <div style="margin-top: 20px;">
-                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心方程</h3>
-                    <div class="equation">
-                        \[ f(x,y) = i(x,y) \cdot r(x,y) \quad \text{(光照 × 反射)} \]
-                    </div>
-                    <div class="eq-caption">图像形成模型：i 变化缓慢（低频），r 包含细节（高频）。不均匀光照 = i 的动态范围过大。</div>
-                    <div class="equation">
-                        \[ \ln[f(x,y)] = \ln[i(x,y)] + \ln[r(x,y)] \]
-                    </div>
-                    <div class="eq-caption">对数变换将乘法分离为加法，使频域线性滤波可分别处理两个分量。</div>
-                    <div class="equation">
-                        \[ H_{\text{homo}}(u,v) = (\gamma_H - \gamma_L) \left[1 - \exp\left(-c
-                        \frac{D^2}{D_0^2}\right)\right] + \gamma_L \]
-                    </div>
-                    <div class="eq-caption">同态滤波器：γ<sub>L</sub>
-                        < 1 衰减低频（压缩光照），γ<sub>H</sub> > 1 增强高频（提升反射细节）。c 控制过渡陡峭度。
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- 第二节：理论方法 -->
-        <div class="section" id="section2">
-            <div class="card">
-                <h2><span class="num">2</span> 理论方法：频域中分离光照与反射</h2>
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">核心数学方程</h3>
+                <div class="equation">
+                    \[ f(x,y) = i(x,y) \cdot r(x,y) \quad \text{(光照 × 反射)} \]
+                </div>
+                <div class="eq-caption">图像形成模型：i 变化缓慢（低频），r 包含细节（高频）。不均匀光照 = i 的动态范围过大。</div>
+                <div class="equation">
+                    \[ \ln[f(x,y)] = \ln[i(x,y)] + \ln[r(x,y)] \]
+                </div>
+                <div class="eq-caption">对数变换将乘法分离为加法，使频域线性滤波可分别处理两个分量。</div>
+                <div class="equation">
+                    \[ H_{\text{homo}}(u,v) = (\gamma_H - \gamma_L) \left[1 - \exp\left(-c
+                    \frac{D^2}{D_0^2}\right)\right] + \gamma_L \]
+                </div>
+                <div class="eq-caption">同态滤波器：γ<sub>L</sub>
+                    < 1 衰减低频（压缩光照），γ<sub>H</sub> > 1 增强高频（提升反射细节）。c 控制过渡陡峭度。
+                </div>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">频域中分离光照与反射（第6章）</h3>
                 <div class="spectrum-demo">
                     <div class="canvas-wrapper">
                         <canvas id="homoFilterCanvas" width="300" height="200"></canvas>
@@ -429,10 +425,10 @@
             </div>
         </div>
 
-        <!-- 第三节：效果对比 -->
-        <div class="section" id="section3">
+        <!-- 第二部分：预期实验结果/效果对比 -->
+        <div class="section" id="section2">
             <div class="card">
-                <h2><span class="num">3</span> 效果评估：校正前后对比维度</h2>
+                <h2><span class="num">2</span> 预期实验结果：校正前后对比维度</h2>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px;">
                     <div
                         style="background:#fff; border-radius:var(--radius); padding:18px; text-align:center; box-shadow:var(--shadow-sm);">
@@ -464,9 +460,7 @@
                 <span class="knowledge-badge">参数优化</span>
             </div>
         </div>
-        <div class="footer-note">
-            信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 同态滤波光照校正 · 问题建模与理论方法
-        </div>
+        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; 同态滤波光照校正 · 理论与建模</div>
     </div>
     <script>
         (() => {

@@ -2,7 +2,7 @@
  * @Author: NaoMenDDD 2017954808@qq.com
  * @Date: 2026-05-19 10:00:00
  * @LastEditors: NaoMenDDD 2017954808@qq.com
- * @Description: 扩展任务三延伸：Sobel vs Canny 边缘检测对比 - 问题建模与理论方法
+ * @Description: Sobel vs Canny 边缘检测对比 - 理论与建模 & 预期实验结果
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -10,7 +10,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sobel vs Canny 边缘检测对比</title>
+    <title>Sobel vs Canny 边缘检测对比 - 理论与建模</title>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
     <style>
         :root {
@@ -360,10 +360,12 @@
             <p class="subtitle">对比空域Sobel梯度与Canny多级边缘检测，分析两种方法的原理差异与效果异同</p>
         </div>
 
-        <!-- 第一节：双路径系统建模 -->
+        <!-- 第一部分：理论与建模 -->
         <div class="section" id="section1">
             <div class="card">
-                <h2><span class="num">1</span> 问题建模：两种边缘提取路径</h2>
+                <h2><span class="num">1</span> 理论与建模</h2>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">两种边缘提取路径</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 16px;">
                     同一输入图像分别经过<strong>空域Sobel算子</strong>和<strong>Canny多级算法</strong>，得到边缘强度图进行对比。
                 </p>
@@ -385,31 +387,25 @@
                         <div class="block canny">g<sub>B</sub>(x,y)</div>
                     </div>
                 </div>
-                <div style="margin-top:20px;">
-                    <h3 style="font-weight:600; font-size:1rem; margin-bottom:10px;">核心方程对比</h3>
-                    <div class="equation">\[ G_x = f * S_x,\quad G_y = f * S_y \quad\rightarrow\quad |G| = \sqrt{G_x^2 +
-                        G_y^2} \]</div>
-                    <div class="eq-caption">
-                        Sobel算子：3×3局部卷积，S<sub>x</sub>=[[-1,0,1],[-2,0,2],[-1,0,1]]，S<sub>y</sub>=S<sub>x</sub><sup>T</sup>。自带平滑效果。
-                    </div>
-                    <div class="equation">
-                        \[
-                        \begin{aligned}
-                        &\text{1. Gaussian平滑： } f_s = f * G_\sigma \\
-                        &\text{2. 梯度幅值/方向： } M = \sqrt{G_x^2+G_y^2}\ \quad \theta = \arctan(G_y/G_x) \\
-                        &\text{3. 非极大值抑制 } \rightarrow \text{4. 双阈值连接}
-                        \end{aligned}
-                        \]
-                    </div>
-                    <div class="eq-caption">Canny边缘检测：多级优化，包含平滑降噪、梯度计算、非极大值抑制和双阈值滞后连接，产生单像素、连续且噪声抑制强的边缘。</div>
-                </div>
-            </div>
-        </div>
 
-        <!-- 第二节：理论对比 -->
-        <div class="section" id="section2">
-            <div class="card">
-                <h2><span class="num">2</span> 理论方法：两种边缘检测范式的对比</h2>
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">核心方程对比（第4章、第6章）</h3>
+                <div class="equation">\[ G_x = f * S_x,\quad G_y = f * S_y \quad\rightarrow\quad |G| = \sqrt{G_x^2 +
+                    G_y^2} \]</div>
+                <div class="eq-caption">
+                    Sobel算子：3×3局部卷积，S<sub>x</sub>=[[-1,0,1],[-2,0,2],[-1,0,1]]，S<sub>y</sub>=S<sub>x</sub><sup>T</sup>。自带平滑效果。
+                </div>
+                <div class="equation">
+                    \[
+                    \begin{aligned}
+                    &\text{1. Gaussian平滑： } f_s = f * G_\sigma \\
+                    &\text{2. 梯度幅值/方向： } M = \sqrt{G_x^2+G_y^2}\ \quad \theta = \arctan(G_y/G_x) \\
+                    &\text{3. 非极大值抑制 } \rightarrow \text{4. 双阈值连接}
+                    \end{aligned}
+                    \]
+                </div>
+                <div class="eq-caption">Canny边缘检测：多级优化，包含平滑降噪、梯度计算、非极大值抑制和双阈值滞后连接，产生单像素、连续且噪声抑制强的边缘。</div>
+
+                <h3 style="font-weight:600; font-size:1rem; margin-top:28px; margin-bottom:10px;">两种边缘检测范式的理论对比</h3>
                 <div class="demo-row">
                     <div class="canvas-wrapper"><canvas id="sobelEdgeCanvas" width="260" height="200"></canvas>
                         <div class="canvas-caption">Sobel边缘 (梯度幅值)</div>
@@ -452,10 +448,10 @@
             </div>
         </div>
 
-        <!-- 第三节：结论与适用场景 -->
-        <div class="section" id="section3">
+        <!-- 第二部分：预期实验结果/效果对比 -->
+        <div class="section" id="section2">
             <div class="card">
-                <h2><span class="num">3</span> 结论：适用场景与互补性</h2>
+                <h2><span class="num">2</span> 预期实验结果：适用场景与互补性</h2>
                 <p style="color:var(--text-secondary);">
                     <strong>Sobel算子</strong>计算简单、响应速度快，适合实时性要求高且对边缘精度要求不高的任务，但梯度幅值较粗，受噪声干扰。<br>
                     <strong>Canny边缘检测</strong>在信噪比、定位精度和单边缘响应之间取得了最佳平衡，是目前应用最广泛的边缘检测方法之一，尤其适合高质量图像分析和计算机视觉预处理。<br>
@@ -465,7 +461,7 @@
                 <span class="knowledge-badge">Canny三准则</span>
             </div>
         </div>
-        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; Sobel vs Canny边缘检测对比 · 深度扩展</div>
+        <div class="footer-note">信号与系统 · 灰度图像频域处理 &nbsp;|&nbsp; Sobel vs Canny边缘检测对比 · 理论与建模</div>
     </div>
     <script>
         (() => {
