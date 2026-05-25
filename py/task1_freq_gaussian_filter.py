@@ -145,16 +145,34 @@ def gaussian_lowpass_filter(shape, D0):
     """
     rows, cols = shape
     crow, ccol = rows // 2, cols // 2
+
+    # 为频域平面中的每个像素建立坐标网格。
+    # u 表示列方向坐标，v 表示行方向坐标，后续会用来计算
+    # 每个频率点到频谱中心的距离。
     u = np.arange(cols)
     v = np.arange(rows)
     U, V = np.meshgrid(u, v)
+
+    # 计算每个频率点到频谱中心的径向距离 D(u,v)。
+    # 高斯低通滤波器的核心思想是：
+    # - 离中心越近，频率越低，保留越多；
+    # - 离中心越远，频率越高，衰减越强。
+    # 这里使用标准高斯公式，让滤波器响应从中心向外平滑衰减。
     D = np.sqrt((U - ccol) ** 2 + (V - crow) ** 2)
+
+    # 根据高斯函数生成低通响应：中心处接近 1，边缘逐渐趋近 0。
+    # D0 在这里相当于控制衰减速度的尺度参数，数值越大，通带越宽。
     H_lp = np.exp(-(D ** 2) / (2 * (D0 ** 2)))
     return H_lp
 
 
 def gaussian_highpass_filter(shape, D0):
     """生成高斯高通滤波器: H_hp = 1 - H_lp"""
+    # 高斯高通直接由高斯低通取补集得到。
+    # 这样可以保证：
+    # - 低频部分在高通中被压制；
+    # - 高频部分在高通中被保留。
+    # 两者在同一个 D0 下互为补充。
     H_lp = gaussian_lowpass_filter(shape, D0)
     return 1 - H_lp
 

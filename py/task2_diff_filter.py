@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 22:00:41
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-19 17:08:52
+LastEditTime: 2026-05-25 17:27:35
 Description: 任务二：频域差分滤波器 - 二维一阶差分（梯度）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -65,10 +65,20 @@ def freq_differential_filters(shape):
     """
     rows, cols = shape
     crow, ccol = rows // 2, cols // 2
+    # 频域索引中心化：
+    # - 原始 FFT 的频率索引是从 0 到 M-1/N-1（左上为直流），
+    #   使用 fftshift 后直流分量被移动到频谱中心。
+    # - 因此这里将索引平移，使坐标 u/v 在中心处为 0，向左右/上下分别为正负频率。
     u = np.arange(cols) - ccol
     v = np.arange(rows) - crow
     U, V = np.meshgrid(u, v)
 
+    # 傅里叶变换中，空间域的一阶导数对应频域乘以 (j*2π*ξ)
+    # 其中 ξ 是以像素为单位的频率分量。这里把 U 和 V 分别除以图像尺寸
+    # (cols/rows) 来归一化为每像素的频率比例，从而保证运算的物理量纲一致。
+    # - U/cols 表示每个频率点对应的水平归一化频率（每像素周期数），
+    # - V/rows 表示垂直归一化频率。
+    # 复数单位 1j 表示相位变化，对应空间导数的相位因子。
     H_x = 1j * 2 * np.pi * U / cols
     H_y = 1j * 2 * np.pi * V / rows
     return H_x, H_y
@@ -76,8 +86,17 @@ def freq_differential_filters(shape):
 
 def apply_freq_filter(fft_shifted, filter_h):
     """应用频域滤波器，返回逆变换后的空域结果（实数）"""
+    # 在频域直接相乘：等价于空域的线性卷积/差分操作。
+    # 这里假定传入的 fft_shifted 已经是经过 np.fft.fftshift 的频谱，
+    # 而 filter_h 的中心也应当与之对齐（即以频谱中心为原点）。
     filtered_fft = fft_shifted * filter_h
+
+    # 如果之前做了 fftshift，为了执行逆 FFT 需要先将频谱移回原始排列。
+    # np.fft.ifftshift 将中心移动回角落，使得 np.fft.ifft2 可以正确恢复空域图像。
     f_ishift = np.fft.ifftshift(filtered_fft)
+
+    # 执行逆变换恢复到空域，结果通常为复数（数值误差或相位影响），
+    # 对于实际的导数/滤波结果，我们只关心其实部（真实影像强度），因此取 real。
     result = np.fft.ifft2(f_ishift)
     return np.real(result)
 
@@ -145,7 +164,7 @@ def main(input_image_path, output_dir="output", show_output=False):
     # ----- 6. 滤波器响应可视化 -----
     filter_response, filter_log = visualize_filter_response(H_x)
 
-    # ----- 7. 生成组合结果图（奥运五环式错位布局）-----
+    # ----- 7. 生成组合结果图 -----
     was_interactive = plt.isinteractive()
     plt.ioff()
     fig = plt.figure(figsize=(18, 10), facecolor='white')

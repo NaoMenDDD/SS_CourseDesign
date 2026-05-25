@@ -92,10 +92,17 @@ def ideal_highpass_filter(shape, D0):
         滤波器频率响应矩阵（0-1）
     """
     rows, cols = shape
+    # 将频率索引中心化：fftshift 后直流分量在频谱中心，
+    # 因此这里生成以中心为原点的坐标系（负频率/正频率对称）。
     crow, ccol = rows // 2, cols // 2
     u = np.arange(cols) - ccol
     v = np.arange(rows) - crow
     U, V = np.meshgrid(u, v)
+
+    # 计算每个频率点到频谱中心的径向距离 D(u,v)。
+    # 在理想高通中，低频（小于等于 D0）的分量被完全抑制（置为0），
+    # 高频（大于 D0）完整保留（置为1）；因此这里先创建全 1 矩阵，
+    # 再将中心半径内的点设为 0。
     D = np.sqrt(U**2 + V**2)
     H = np.ones(shape, dtype=np.float32)
     H[D <= D0] = 0.0
@@ -112,11 +119,16 @@ def gaussian_highpass_filter(shape, D0):
         滤波器频率响应矩阵（0-1）
     """
     rows, cols = shape
+    # 同样使用中心化坐标系计算径向平方距离 D^2
     crow, ccol = rows // 2, cols // 2
     u = np.arange(cols) - ccol
     v = np.arange(rows) - crow
     U, V = np.meshgrid(u, v)
     D2 = U**2 + V**2
+
+    # 高斯低通响应 H_lp = exp(-D^2 / (2 * D0^2))，在中心接近 1，
+    # 随距离增大平滑衰减；高斯高通则为 1 - H_lp，得到平滑的高通响应，
+    # 相比理想高通能显著减少振铃（ringing）伪影。
     H_lp = np.exp(-D2 / (2 * (D0 ** 2)))
     return 1 - H_lp
 
@@ -130,11 +142,23 @@ def apply_filter_and_reconstruct(fft_shifted, filter_h):
     返回：
         重建后的图像（uint8，范围0-255）
     """
+    # 频域相乘等价于空域的线性卷积或微分操作。
+    # 假定传入的 fft_shifted 已做过 np.fft.fftshift，且 filter_h 的中心与之对齐。
     filtered = fft_shifted * filter_h
+
+    # 在进行逆 FFT 前需要将频谱移回原始布局（ifftshift），
+    # 否则 ifft2 会错误地解释频率排列。
     img_recon = np.fft.ifft2(np.fft.ifftshift(filtered))
+
+    # 逆变换结果通常为复数（主要是数值误差或相位分量），取其实部作为重建图像。
     img_recon = np.real(img_recon)
-    img_recon = np.abs(img_recon)   # 高通结果可能有负值，取绝对值
-    # 归一化到 0-255
+
+    # 对于高通操作，重建后可能出现负值（因为滤掉了直流分量），
+    # 此处取绝对值以便于可视化边缘强度；这一步是视觉化上的处理，
+    # 若需保持符号信息可去掉 abs 操作并以合适方式显示。
+    img_recon = np.abs(img_recon)
+
+    # 将结果线性归一化到 0-255 便于显示与保存。
     img_min, img_max = img_recon.min(), img_recon.max()
     if img_max - img_min > 1e-8:
         img_recon = (img_recon - img_min) / (img_max - img_min) * 255.0
@@ -151,10 +175,22 @@ def sobel_edge_detection(img_uint8):
     返回：
         梯度幅度图（uint8）
     """
+    # Sobel 算子是一个离散的微分算子，用于近似图像的空间梯度。
+    # 这里使用 OpenCV 的 Sobel 实现，返回浮点型梯度值：
+    # - grad_x: 对 x 方向（列）的一阶导近似，强调垂直边缘；
+    # - grad_y: 对 y 方向（行）的一阶导近似，强调水平边缘。
+    # 使用 cv2.CV_32F 以保留正负梯度信息并避免溢出。
     grad_x = cv2.Sobel(img_uint8, cv2.CV_32F, 1, 0, ksize=3)
     grad_y = cv2.Sobel(img_uint8, cv2.CV_32F, 0, 1, ksize=3)
+
+    # 梯度幅值是两个方向分量的欧氏范数，表示边缘强度。
+    # 使用平方和开方可以合并两个方向的信息，得到单通道的边缘响应图。
     mag = np.sqrt(grad_x**2 + grad_y**2)
-    # 归一化到 0-255
+
+    # 为了可视化，将幅值线性归一化到 0-255 区间：
+    # - 减去最小值并除以动态范围将其映射到 [0,1]
+    # - 乘以 255 得到 8 位显示范围
+    # + 通过 +1e-8 防止除以零的数值不稳定情况。
     mag_norm = (mag - mag.min()) / (mag.max() - mag.min() + 1e-8) * 255.0
     return mag_norm.astype(np.uint8)
 

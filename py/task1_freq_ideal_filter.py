@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-22 10:23:05
+LastEditTime: 2026-05-25 17:15:45
 Description: 任务1：频域滤波
 '''
 
@@ -144,9 +144,17 @@ def ideal_lowpass_filter(shape, D0):
     """
     rows, cols = shape
     crow, ccol = rows // 2, cols // 2
+
+    # 为频域中的每一个坐标点建立二维网格。
+    # 这里的 u/v 分别对应频谱平面中的列坐标和行坐标，
+    # 后面会用它们计算“每个频率点到频谱中心的距离”。
     u = np.arange(cols)
     v = np.arange(rows)
     U, V = np.meshgrid(u, v)
+
+    # 以频谱中心为圆心，计算每个位置的径向距离 D(u,v)。
+    # 理想低通的判定规则就是：距离中心越近，越属于低频；
+    # 当距离不超过截止半径 D0 时，该点在通带内，取值为 1。
     D = np.sqrt((U - ccol) ** 2 + (V - crow) ** 2)
     H_lp = (D <= D0).astype(float)
     return H_lp
@@ -156,6 +164,10 @@ def ideal_highpass_filter(shape, D0):
     """
     生成理想高通滤波器: H_hp = 1 - H_lp
     """
+    # 理想高通可以直接由理想低通取补集得到：
+    # - 低通区域为 1 的位置，在高通中要被抑制为 0；
+    # - 低通区域为 0 的位置，在高通中要保留为 1。
+    # 这样能保证两者在同一截止半径 D0 下互为互补分量。
     H_lp = ideal_lowpass_filter(shape, D0)
     return 1.0 - H_lp
 
