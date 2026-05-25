@@ -1,15 +1,13 @@
 '''
 Author: NaoMenDDD 2017954808@qq.com
-Date: 2026-05-19 22:00:00
+Date: 2026-05-14 16:36:28
 LastEditors: NaoMenDDD 2017954808@qq.com
-Description: 扩展任务三子任务：频域高通滤波 vs Sobel 边缘检测对比
+LastEditTime: 2026-05-26 04:04:49
+Description: 扩展任务三：频域高通滤波与 Sobel 边缘检测对比（自适应截止频率）
 
-对比两种边缘提取方法：
-- 路径A (频域)：原图 → FFT → 高通滤波 → IFFT → 边缘图
-- 路径B (空域)：原图 → Sobel 算子 → 梯度幅值
-
-输出组合对比图，包含原图、频域高通结果、Sobel 结果及方法说明。
+Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
 '''
+
 
 import argparse
 import numpy as np
@@ -55,14 +53,99 @@ def load_grayscale_image(image_path):
     return img.astype(np.float32)
 
 
-def compute_cutoff_frequency(fft_shifted, energy_percent=0.95):
+def compute_image_entropy(img_uint8):
+    """计算图像的灰度熵，反映纹理复杂度"""
+    hist = cv2.calcHist([img_uint8], [0], None, [256], [0, 256])
+    hist = hist.flatten() / np.sum(hist)
+    hist = hist[hist > 0]
+    entropy = -np.sum(hist * np.log2(hist))
+    return entropy
+
+
+def compute_spectral_slope(fft_shifted):
     """
-    根据径向能量累计比例计算自适应截止频率（用于滤波器设计）
+    计算频谱能量径向衰减斜率（对数域）
+    返回斜率值（绝对值越大表示能量衰减越快，图像越平滑）
+    """
+    magnitude_sq = np.abs(fft_shifted) ** 2
+    rows, cols = magnitude_sq.shape
+    crow, ccol = rows // 2, cols // 2
+    y, x = np.ogrid[:rows, :cols]
+    dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
+    max_r = int(np.ceil(np.max(dist)))
+    radial_energy = np.zeros(max_r + 1)
+    for r in range(max_r + 1):
+        mask = (dist >= r) & (dist < r + 1)
+        radial_energy[r] = np.sum(magnitude_sq[mask])
+    # 归一化能量
+    total = np.sum(radial_energy)
+    if total > 0:
+        radial_energy /= total
+    # 取中段半径（避免直流和极高频噪声）
+    r_start = 5
+    r_end = min(80, max_r - 5)
+    if r_end <= r_start:
+        return 0.5
+    r_vals = np.arange(r_start, r_end)
+    y_vals = radial_energy[r_start:r_end]
+    # 避免 log(0)
+    y_vals = np.maximum(y_vals, 1e-6)
+    # 对数域线性拟合
+    coeffs = np.polyfit(np.log(r_vals + 1), np.log(y_vals), 1)
+    slope = coeffs[0]  # 负值，绝对值越大衰减越快
+    return abs(slope)
+
+
+def compute_cutoff_frequency_adaptive(fft_shifted, img_uint8, filter_type='highpass'):
+    """
+    基于频谱斜率和图像熵的自适应截止频率计算
     参数：
         fft_shifted: 频移后的复数频谱
-        energy_percent: 累计能量占比阈值（默认0.95=95%）
+        img_uint8: 原始灰度图（uint8）
+        filter_type: 滤波类型，'lowpass' 或 'highpass'
     返回：
-        截止频率对应的半径（浮点数，单位：像素）
+        cutoff_radius: 截止频率半径（浮点数）
+    """
+    magnitude_sq = np.abs(fft_shifted) ** 2
+    rows, cols = magnitude_sq.shape
+    crow, ccol = rows // 2, cols // 2
+    y, x = np.ogrid[:rows, :cols]
+    dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
+    max_r = int(np.ceil(np.max(dist)))
+    radial_energy = np.zeros(max_r + 1)
+    for r in range(max_r + 1):
+        mask = (dist >= r) & (dist < r + 1)
+        radial_energy[r] = np.sum(magnitude_sq[mask])
+    cum_ratio = np.cumsum(radial_energy) / np.sum(radial_energy)
+    
+    # 计算频谱斜率
+    slope = compute_spectral_slope(fft_shifted)
+    # 计算图像熵
+    entropy = compute_image_entropy(img_uint8)
+    
+    # 动态能量百分比公式（经验调参）
+    # 平滑图像（斜率大、熵小）→ 百分比偏低（约0.85）
+    # 纹理丰富图像（斜率小、熵大）→ 百分比偏高（约0.95）
+    percent = 0.85 + 0.1 * np.tanh(slope - 0.5) + 0.05 * np.tanh((entropy - 7) / 2)
+    percent = np.clip(percent, 0.80, 0.97)
+    if filter_type == 'highpass':
+        percent += 0.03
+        percent = np.clip(percent, 0.80, 0.97)
+    
+    cutoff_idx = np.where(cum_ratio >= percent)[0]
+    cutoff_radius = cutoff_idx[0] if len(cutoff_idx) > 0 else max_r
+    return float(cutoff_radius)
+
+
+def compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95):
+    """
+    根据径向能量累计比例计算截止频率（半径，单位：像素）
+    参数：
+        fft_shifted: 频移后的复数频谱
+        energy_percent: 累计能量占比阈值，默认0.95 (95%)
+    返回：
+        cutoff_radius: 截止频率对应的半径（浮点数）
+    说明：此函数为传统方法，保留用于比较。
     """
     magnitude_sq = np.abs(fft_shifted) ** 2
     rows, cols = magnitude_sq.shape
@@ -71,15 +154,15 @@ def compute_cutoff_frequency(fft_shifted, energy_percent=0.95):
     dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
     max_radius = int(np.ceil(np.max(dist)))
     radial_energy = np.zeros(max_radius + 1)
-    # 计算各个半径处的能量
     for r in range(max_radius + 1):
         mask = (dist >= r) & (dist < (r + 1))
         radial_energy[r] = np.sum(magnitude_sq[mask])
     cum_energy = np.cumsum(radial_energy)
-    cum_ratio = cum_energy / cum_energy[-1]
-    # 找到能量达到阈值的最小半径
+    total_energy = cum_energy[-1]
+    cum_ratio = cum_energy / total_energy
     cutoff_idx = np.where(cum_ratio >= energy_percent)[0]
-    return float(cutoff_idx[0]) if len(cutoff_idx) > 0 else float(max_radius)
+    cutoff_radius = cutoff_idx[0] if len(cutoff_idx) > 0 else max_radius
+    return float(cutoff_radius)
 
 
 def ideal_highpass_filter(shape, D0):
@@ -92,17 +175,10 @@ def ideal_highpass_filter(shape, D0):
         滤波器频率响应矩阵（0-1）
     """
     rows, cols = shape
-    # 将频率索引中心化：fftshift 后直流分量在频谱中心，
-    # 因此这里生成以中心为原点的坐标系（负频率/正频率对称）。
     crow, ccol = rows // 2, cols // 2
     u = np.arange(cols) - ccol
     v = np.arange(rows) - crow
     U, V = np.meshgrid(u, v)
-
-    # 计算每个频率点到频谱中心的径向距离 D(u,v)。
-    # 在理想高通中，低频（小于等于 D0）的分量被完全抑制（置为0），
-    # 高频（大于 D0）完整保留（置为1）；因此这里先创建全 1 矩阵，
-    # 再将中心半径内的点设为 0。
     D = np.sqrt(U**2 + V**2)
     H = np.ones(shape, dtype=np.float32)
     H[D <= D0] = 0.0
@@ -119,16 +195,11 @@ def gaussian_highpass_filter(shape, D0):
         滤波器频率响应矩阵（0-1）
     """
     rows, cols = shape
-    # 同样使用中心化坐标系计算径向平方距离 D^2
     crow, ccol = rows // 2, cols // 2
     u = np.arange(cols) - ccol
     v = np.arange(rows) - crow
     U, V = np.meshgrid(u, v)
     D2 = U**2 + V**2
-
-    # 高斯低通响应 H_lp = exp(-D^2 / (2 * D0^2))，在中心接近 1，
-    # 随距离增大平滑衰减；高斯高通则为 1 - H_lp，得到平滑的高通响应，
-    # 相比理想高通能显著减少振铃（ringing）伪影。
     H_lp = np.exp(-D2 / (2 * (D0 ** 2)))
     return 1 - H_lp
 
@@ -142,23 +213,10 @@ def apply_filter_and_reconstruct(fft_shifted, filter_h):
     返回：
         重建后的图像（uint8，范围0-255）
     """
-    # 频域相乘等价于空域的线性卷积或微分操作。
-    # 假定传入的 fft_shifted 已做过 np.fft.fftshift，且 filter_h 的中心与之对齐。
     filtered = fft_shifted * filter_h
-
-    # 在进行逆 FFT 前需要将频谱移回原始布局（ifftshift），
-    # 否则 ifft2 会错误地解释频率排列。
     img_recon = np.fft.ifft2(np.fft.ifftshift(filtered))
-
-    # 逆变换结果通常为复数（主要是数值误差或相位分量），取其实部作为重建图像。
     img_recon = np.real(img_recon)
-
-    # 对于高通操作，重建后可能出现负值（因为滤掉了直流分量），
-    # 此处取绝对值以便于可视化边缘强度；这一步是视觉化上的处理，
-    # 若需保持符号信息可去掉 abs 操作并以合适方式显示。
     img_recon = np.abs(img_recon)
-
-    # 将结果线性归一化到 0-255 便于显示与保存。
     img_min, img_max = img_recon.min(), img_recon.max()
     if img_max - img_min > 1e-8:
         img_recon = (img_recon - img_min) / (img_max - img_min) * 255.0
@@ -175,22 +233,9 @@ def sobel_edge_detection(img_uint8):
     返回：
         梯度幅度图（uint8）
     """
-    # Sobel 算子是一个离散的微分算子，用于近似图像的空间梯度。
-    # 这里使用 OpenCV 的 Sobel 实现，返回浮点型梯度值：
-    # - grad_x: 对 x 方向（列）的一阶导近似，强调垂直边缘；
-    # - grad_y: 对 y 方向（行）的一阶导近似，强调水平边缘。
-    # 使用 cv2.CV_32F 以保留正负梯度信息并避免溢出。
     grad_x = cv2.Sobel(img_uint8, cv2.CV_32F, 1, 0, ksize=3)
     grad_y = cv2.Sobel(img_uint8, cv2.CV_32F, 0, 1, ksize=3)
-
-    # 梯度幅值是两个方向分量的欧氏范数，表示边缘强度。
-    # 使用平方和开方可以合并两个方向的信息，得到单通道的边缘响应图。
     mag = np.sqrt(grad_x**2 + grad_y**2)
-
-    # 为了可视化，将幅值线性归一化到 0-255 区间：
-    # - 减去最小值并除以动态范围将其映射到 [0,1]
-    # - 乘以 255 得到 8 位显示范围
-    # + 通过 +1e-8 防止除以零的数值不稳定情况。
     mag_norm = (mag - mag.min()) / (mag.max() - mag.min() + 1e-8) * 255.0
     return mag_norm.astype(np.uint8)
 
@@ -204,12 +249,13 @@ def normalize_display(img):
         return np.zeros_like(img).astype(np.uint8)
 
 
-def main(input_image_path, output_dir="output", show_output=False):
+def main(input_image_path, output_dir="output", cutoff_method="adaptive", show_output=False):
     """
     主处理流程：比较频域高通滤波与 Sobel 边缘检测
     参数：
         input_image_path: 输入图像路径
         output_dir: 输出目录
+        cutoff_method: 截止频率计算方法，'adaptive' 或 'energy'
         show_output: 是否显示输出图片
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -219,11 +265,16 @@ def main(input_image_path, output_dir="output", show_output=False):
     img = load_grayscale_image(input_image_path)
     img_uint8 = img.astype(np.uint8)
 
-    # ----- 2. 计算自适应截止频率（基于频谱能量95%）-----
+    # ----- 2. 计算自适应截止频率（用于高通滤波）-----
     fft_orig = np.fft.fft2(img)
     fft_shifted = np.fft.fftshift(fft_orig)
-    D0 = compute_cutoff_frequency(fft_shifted, energy_percent=0.95)
-    print(f"自适应截止频率 D0 = {D0:.1f} px (用于高通滤波)")
+    
+    if cutoff_method == "adaptive":
+        D0 = compute_cutoff_frequency_adaptive(fft_shifted, img_uint8, filter_type='highpass')
+        print(f"自适应方法（基于频谱斜率和图像熵）计算的截止频率 D0 = {D0:.1f} px")
+    else:
+        D0 = compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95)
+        print(f"能量累计95%方法计算的截止频率 D0 = {D0:.1f} px")
 
     # ----- 3. 同时构造并应用两种高通滤波器 -----
     H_hp_ideal = ideal_highpass_filter(img.shape, D0)
@@ -300,11 +351,13 @@ def main(input_image_path, output_dir="output", show_output=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="高通滤波 vs Sobel 边缘检测对比")
+    parser = argparse.ArgumentParser(description="高通滤波 vs Sobel 边缘检测对比（改进自适应截止频率）")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录")
+    parser.add_argument("--cutoff_method", type=str, default="adaptive", choices=["adaptive", "energy"],
+                        help="截止频率计算方法：adaptive（自适应，基于频谱斜率和图像熵）或 energy（能量累计95%），默认 adaptive")
     parser.add_argument("--show", action="store_true", help="显示结果图片")
     args = parser.parse_args()
 
@@ -317,5 +370,5 @@ if __name__ == "__main__":
                 print(f"默认图像不存在，自动选择: {args.input}")
             else:
                 raise FileNotFoundError(f"未找到图像: {args.input}")
-    main(args.input, args.output_dir, args.show)
+    main(args.input, args.output_dir, args.cutoff_method, args.show)
     print(f"\n完成！输出文件: {args.output_dir}/hpf_vs_sobel.png")

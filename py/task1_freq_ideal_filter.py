@@ -2,9 +2,12 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-25 17:15:45
-Description: 任务1：频域滤波
+LastEditTime: 2026-05-26 03:58:01
+Description: 任务一：频域理想滤波器设计与应用（自适应截止频率）
+
+Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
 '''
+
 
 import argparse
 import numpy as np
@@ -36,13 +39,13 @@ plt.rcParams.update({
 
 
 def load_grayscale_image(image_path):
-    """加载图像，转换为灰度图（0-255范围，uint8）"""
+    """加载图像，转换为灰度图（0-255范围，float32）"""
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"图像文件不存在: {image_path}")
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
         raise ValueError(f"无法读取图像，请检查格式（支持 .bmp .jpg .png）: {image_path}")
-    return img.astype(np.float32)  # 使用浮点数进行处理
+    return img.astype(np.float32)
 
 
 def compute_fft_spectrum(img):
@@ -59,6 +62,90 @@ def compute_fft_spectrum(img):
     return fshift, magnitude_log, magnitude_linear
 
 
+def compute_image_entropy(img_uint8):
+    """计算图像的灰度熵，反映纹理复杂度"""
+    hist = cv2.calcHist([img_uint8], [0], None, [256], [0, 256])
+    hist = hist.flatten() / np.sum(hist)
+    hist = hist[hist > 0]
+    entropy = -np.sum(hist * np.log2(hist))
+    return entropy
+
+
+def compute_spectral_slope(fft_shifted):
+    """
+    计算频谱能量径向衰减斜率（对数域）
+    返回斜率值（绝对值越大表示能量衰减越快，图像越平滑）
+    """
+    magnitude_sq = np.abs(fft_shifted) ** 2
+    rows, cols = magnitude_sq.shape
+    crow, ccol = rows // 2, cols // 2
+    y, x = np.ogrid[:rows, :cols]
+    dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
+    max_r = int(np.ceil(np.max(dist)))
+    radial_energy = np.zeros(max_r + 1)
+    for r in range(max_r + 1):
+        mask = (dist >= r) & (dist < r + 1)
+        radial_energy[r] = np.sum(magnitude_sq[mask])
+    # 归一化能量
+    total = np.sum(radial_energy)
+    if total > 0:
+        radial_energy /= total
+    # 取中段半径（避免直流和极高频噪声）
+    r_start = 5
+    r_end = min(80, max_r - 5)
+    if r_end <= r_start:
+        return 0.5
+    r_vals = np.arange(r_start, r_end)
+    y_vals = radial_energy[r_start:r_end]
+    # 避免 log(0)
+    y_vals = np.maximum(y_vals, 1e-6)
+    # 对数域线性拟合
+    coeffs = np.polyfit(np.log(r_vals + 1), np.log(y_vals), 1)
+    slope = coeffs[0]  # 负值，绝对值越大衰减越快
+    return abs(slope)
+
+
+def compute_cutoff_frequency_adaptive(fft_shifted, img_uint8, filter_type='lowpass'):
+    """
+    基于频谱斜率和图像熵的自适应截止频率计算
+    参数：
+        fft_shifted: 频移后的复数频谱
+        img_uint8: 原始灰度图（uint8）
+        filter_type: 滤波类型，'lowpass' 或 'highpass'
+    返回：
+        cutoff_radius: 截止频率半径（浮点数）
+    """
+    magnitude_sq = np.abs(fft_shifted) ** 2
+    rows, cols = magnitude_sq.shape
+    crow, ccol = rows // 2, cols // 2
+    y, x = np.ogrid[:rows, :cols]
+    dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
+    max_r = int(np.ceil(np.max(dist)))
+    radial_energy = np.zeros(max_r + 1)
+    for r in range(max_r + 1):
+        mask = (dist >= r) & (dist < r + 1)
+        radial_energy[r] = np.sum(magnitude_sq[mask])
+    cum_ratio = np.cumsum(radial_energy) / np.sum(radial_energy)
+    
+    # 计算频谱斜率
+    slope = compute_spectral_slope(fft_shifted)
+    # 计算图像熵
+    entropy = compute_image_entropy(img_uint8)
+    
+    # 动态能量百分比公式（经验调参）
+    # 平滑图像（斜率大、熵小）→ 百分比偏低（约0.85）
+    # 纹理丰富图像（斜率小、熵大）→ 百分比偏高（约0.95）
+    percent = 0.85 + 0.1 * np.tanh(slope - 0.5) + 0.05 * np.tanh((entropy - 7) / 2)
+    percent = np.clip(percent, 0.80, 0.97)
+    if filter_type == 'highpass':
+        percent += 0.03
+        percent = np.clip(percent, 0.80, 0.97)
+    
+    cutoff_idx = np.where(cum_ratio >= percent)[0]
+    cutoff_radius = cutoff_idx[0] if len(cutoff_idx) > 0 else max_r
+    return float(cutoff_radius)
+
+
 def compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95):
     """
     根据径向能量累计比例计算截止频率（半径，单位：像素）
@@ -69,30 +156,19 @@ def compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95):
         cutoff_radius: 截止频率对应的半径（浮点数）
     说明：此函数用于滤波器设计，保留能量累计方式。
     """
-    # 计算频谱的幅度平方（能量）
     magnitude_sq = np.abs(fft_shifted) ** 2
     rows, cols = magnitude_sq.shape
     crow, ccol = rows // 2, cols // 2
-
-    # 计算每个频率点到中心的距离
     y, x = np.ogrid[:rows, :cols]
     dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
-
-    # 计算径向能量分布
     max_radius = int(np.ceil(np.max(dist)))
     radial_energy = np.zeros(max_radius + 1)
-
-    # 累积每个半径范围内的能量
     for r in range(max_radius + 1):
         mask = (dist >= r) & (dist < (r + 1))
         radial_energy[r] = np.sum(magnitude_sq[mask])
-
-    # 计算累计能量比例    
     cum_energy = np.cumsum(radial_energy)
     total_energy = cum_energy[-1]
     cum_ratio = cum_energy / total_energy
-
-    # 找到第一个累计能量比例超过阈值的位置
     cutoff_idx = np.where(cum_ratio >= energy_percent)[0]
     cutoff_radius = cutoff_idx[0] if len(cutoff_idx) > 0 else max_radius
     return float(cutoff_radius)
@@ -105,30 +181,23 @@ def compute_cutoff_frequency_3db(fft_shifted):
         fft_shifted: 频移后的复数频谱
     返回：
         cutoff_radius: 截止频率对应的半径（浮点数）
-    说明：此函数仅用于显示，滤波器设计仍使用能量累计方式。
+    说明：此函数仅用于显示，滤波器设计仍使用其他方法。
     """
     magnitude = np.abs(fft_shifted)
     rows, cols = magnitude.shape
     crow, ccol = rows // 2, cols // 2
-
     y, x = np.ogrid[:rows, :cols]
     dist = np.sqrt((x - ccol) ** 2 + (y - crow) ** 2)
     max_radius = int(np.ceil(np.max(dist)))
-
-    # 计算径向平均幅度
     radial_amp = np.zeros(max_radius + 1)
     for r in range(max_radius + 1):
         mask = (dist >= r) & (dist < (r + 1))
         if np.any(mask):
             radial_amp[r] = np.mean(magnitude[mask])
-
-    # 寻找峰值（取 r <= 2 范围内的最大值，避免直流点奇异）
     peak_amp = np.max(radial_amp[:min(3, max_radius+1)])
     if peak_amp == 0:
         return float(max_radius)
-
-    target_amp = peak_amp / np.sqrt(2)   # -3dB
-    # 从半径0开始，找到第一个低于阈值的点
+    target_amp = peak_amp / np.sqrt(2)
     cutoff_idx = np.where(radial_amp <= target_amp)[0]
     if len(cutoff_idx) == 0:
         return float(max_radius)
@@ -144,30 +213,16 @@ def ideal_lowpass_filter(shape, D0):
     """
     rows, cols = shape
     crow, ccol = rows // 2, cols // 2
-
-    # 为频域中的每一个坐标点建立二维网格。
-    # 这里的 u/v 分别对应频谱平面中的列坐标和行坐标，
-    # 后面会用它们计算“每个频率点到频谱中心的距离”。
     u = np.arange(cols)
     v = np.arange(rows)
     U, V = np.meshgrid(u, v)
-
-    # 以频谱中心为圆心，计算每个位置的径向距离 D(u,v)。
-    # 理想低通的判定规则就是：距离中心越近，越属于低频；
-    # 当距离不超过截止半径 D0 时，该点在通带内，取值为 1。
     D = np.sqrt((U - ccol) ** 2 + (V - crow) ** 2)
     H_lp = (D <= D0).astype(float)
     return H_lp
 
 
 def ideal_highpass_filter(shape, D0):
-    """
-    生成理想高通滤波器: H_hp = 1 - H_lp
-    """
-    # 理想高通可以直接由理想低通取补集得到：
-    # - 低通区域为 1 的位置，在高通中要被抑制为 0；
-    # - 低通区域为 0 的位置，在高通中要保留为 1。
-    # 这样能保证两者在同一截止半径 D0 下互为互补分量。
+    """生成理想高通滤波器: H_hp = 1 - H_lp"""
     H_lp = ideal_lowpass_filter(shape, D0)
     return 1.0 - H_lp
 
@@ -181,7 +236,6 @@ def apply_filter_and_reconstruct(fft_shifted, filter_h):
     f_ishift = np.fft.ifftshift(filtered_fft)
     img_reconstructed = np.fft.ifft2(f_ishift)
     img_reconstructed = np.real(img_reconstructed)
-
     img_min = np.min(img_reconstructed)
     img_max = np.max(img_reconstructed)
     if img_max - img_min > 1e-8:
@@ -197,16 +251,16 @@ def visualize_log_spectrum(magnitude_log):
     return (mag_norm * 255).astype(np.uint8)
 
 
-def main(input_image_path, output_dir="output", show_output=False):
+def main(input_image_path, output_dir="output", cutoff_method="adaptive", show_output=False):
     """
     主处理流程：
     1. 加载灰度图像
     2. 计算FFT及频谱
-    3. 基于能量累计95%确定截止频率 D0_filter（用于滤波器构造）
+    3. 根据指定方法确定截止频率 D0_filter（用于滤波器构造）
     4. 基于-3dB定义确定截止频率 D0_display（仅用于显示）
-    5. 生成高斯低通和高通滤波器（使用 D0_filter）
+    5. 生成理想低通和高通滤波器（使用 D0_filter）
     6. 应用滤波并重建图像
-    7. 生成优化布局的组合图（原图+频谱居中，高通在上，低通在下）
+    7. 生成优化布局的组合图
     8. 保存最终PNG图像，并标注显示的截止频率 D0_display
     9. 按需显示输出结果
     """
@@ -215,16 +269,21 @@ def main(input_image_path, output_dir="output", show_output=False):
     # ----- 1. 加载图像 -----
     print(f"加载图像: {input_image_path}")
     img = load_grayscale_image(input_image_path)
+    img_uint8 = img.astype(np.uint8)
     rows, cols = img.shape
 
     # ----- 2. FFT 与频谱 -----
     fft_shifted, magnitude_log, magnitude_linear = compute_fft_spectrum(img)
     magnitude_viz = visualize_log_spectrum(magnitude_log)
 
-    # ----- 3. 确定截止频率 -----
-    # 用于滤波器设计的截止频率（能量累计95%）
-    D0_filter = compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95)
-    print(f"滤波器使用的截止频率（能量累计95%） D0_filter = {D0_filter:.2f} 像素半径")
+    # ----- 3. 确定用于滤波器设计的截止频率 -----
+    if cutoff_method == "adaptive":
+        D0_filter = compute_cutoff_frequency_adaptive(fft_shifted, img_uint8, filter_type='lowpass')
+        print(f"自适应方法（基于频谱斜率和图像熵）计算的截止频率 D0_filter = {D0_filter:.2f} 像素半径")
+    else:
+        D0_filter = compute_cutoff_frequency_energy(fft_shifted, energy_percent=0.95)
+        print(f"能量累计95%方法计算的截止频率 D0_filter = {D0_filter:.2f} 像素半径")
+
     # 用于显示的截止频率（-3dB定义）
     D0_display = compute_cutoff_frequency_3db(fft_shifted)
     print(f"显示的截止频率（-3dB定义） D0_display = {D0_display:.2f} 像素半径")
@@ -249,24 +308,21 @@ def main(input_image_path, output_dir="output", show_output=False):
     was_interactive = plt.isinteractive()
     plt.ioff()
     fig = plt.figure(figsize=(26, 13.0), facecolor='white')
-    # 参考 ext3 的标题布局，减小上方留白以避免过多空白
     gs = fig.add_gridspec(3, 5, hspace=0.20, wspace=0.12,
                           width_ratios=[0.55, 1.05, 1.15, 1.05, 1.05],
                           left=0.02, right=0.98, top=0.86, bottom=0.24)
 
-    ax_original = fig.add_subplot(gs[1, 1])       # Original Image
-    ax_original_spec = fig.add_subplot(gs[1, 2])  # Original Spectrum (log)
-
-    ax_hp_spec = fig.add_subplot(gs[0, 3])        # High-Pass Filtered Spectrum
-    ax_hp_img = fig.add_subplot(gs[0, 4])         # High-Pass Filtered Image
-
-    ax_lp_spec = fig.add_subplot(gs[2, 3])        # Low-Pass Filtered Spectrum
-    ax_lp_img = fig.add_subplot(gs[2, 4])         # Low-Pass Filtered Image
+    ax_original = fig.add_subplot(gs[1, 1])
+    ax_original_spec = fig.add_subplot(gs[1, 2])
+    ax_hp_spec = fig.add_subplot(gs[0, 3])
+    ax_hp_img = fig.add_subplot(gs[0, 4])
+    ax_lp_spec = fig.add_subplot(gs[2, 3])
+    ax_lp_img = fig.add_subplot(gs[2, 4])
 
     ax_hp_img.text(0.5, -0.13, "High-pass filtering suppresses smooth regions\nand keeps fine details and edges.",
-                   transform=ax_hp_img.transAxes, ha='center', fontsize=10.5, color='#5c5c5f',  style='italic')
+                   transform=ax_hp_img.transAxes, ha='center', fontsize=10.5, color='#5c5c5f', style='italic')
     ax_lp_img.text(0.5, -0.13, "Low-pass filtering removes high-frequency detail\nand keeps the image smoother.",
-                   transform=ax_lp_img.transAxes, ha='center', fontsize=10.5, color='#5c5c5f',  style='italic')
+                   transform=ax_lp_img.transAxes, ha='center', fontsize=10.5, color='#5c5c5f', style='italic')
 
     # 将所有图像转为 uint8 以便 imshow
     images = [img, magnitude_viz, magnitude_lp_viz, img_lp, magnitude_hp_viz, img_hp]
@@ -301,7 +357,6 @@ def main(input_image_path, output_dir="output", show_output=False):
         ax.set_title(title, fontsize=13, fontweight='medium', pad=8)
         ax.axis('off')
 
-    # 将主标题居中
     fig.suptitle("Frequency Domain Ideal Filtering Pipeline", fontsize=24, fontweight='semibold',
                  x=0.57, y=0.93, ha='center', color='#1c1c1e')
     fig.canvas.draw()
@@ -327,16 +382,12 @@ def main(input_image_path, output_dir="output", show_output=False):
         )
         fig.add_artist(arrow)
 
-    # 原始图像 -> 原始频谱
     _add_arrow(_right_center(ax_original), _left_center(ax_original_spec))
-
     start_point = _right_center(ax_original_spec)
 
     hp_target = _left_center(ax_hp_spec)
     _add_arrow(start_point, hp_target)
-
     mid_hp = ((start_point[0] + hp_target[0]) / 2, (start_point[1] + hp_target[1]) / 2)
-
     fig.text(mid_hp[0] - 0.015, mid_hp[1], f"Ideal HPF",
              fontsize=9, ha='left', va='center',
              bbox=dict(boxstyle="round,pad=0.2", facecolor='white', edgecolor='none', alpha=0.8))
@@ -344,13 +395,11 @@ def main(input_image_path, output_dir="output", show_output=False):
     lp_target = _left_center(ax_lp_spec)
     _add_arrow(start_point, lp_target)
     mid_lp = ((start_point[0] + lp_target[0]) / 2, (start_point[1] + lp_target[1]) / 2)
-
     fig.text(mid_lp[0] - 0.015, mid_lp[1], f"Ideal LPF",
              fontsize=9, ha='left', va='center',
              bbox=dict(boxstyle="round,pad=0.2", facecolor='white', edgecolor='none', alpha=0.8))
 
     _add_arrow(_right_center(ax_hp_spec), _left_center(ax_hp_img))
-
     _add_arrow(_right_center(ax_lp_spec), _left_center(ax_lp_img))
 
     # 标注截止频率（使用 -3dB 定义的值进行显示）
@@ -363,14 +412,12 @@ def main(input_image_path, output_dir="output", show_output=False):
         zorder=10,
     )
 
-    # 保存组合图像
     output_path = os.path.join(output_dir, "frequency_ideal_filtering_result.png")
     plt.savefig(output_path, bbox_inches='tight', pad_inches=0.28, facecolor='white', dpi=200)
     plt.close(fig)
     if was_interactive:
         plt.ion()
     if show_output:
-        # 直接显示保存后的图片
         saved_img = cv2.imread(output_path, cv2.IMREAD_COLOR)
         if saved_img is not None:
             saved_img_rgb = cv2.cvtColor(saved_img, cv2.COLOR_BGR2RGB)
@@ -385,11 +432,13 @@ def main(input_image_path, output_dir="output", show_output=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="灰度图像频域处理：理想低通/高通滤波")
+    parser = argparse.ArgumentParser(description="灰度图像频域处理：理想低通/高通滤波（改进自适应截止频率）")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录，默认为 output")
+    parser.add_argument("--cutoff_method", type=str, default="adaptive", choices=["adaptive", "energy"],
+                        help="截止频率计算方法：adaptive（自适应，基于频谱斜率和图像熵）或 energy（能量累计95%），默认 adaptive")
     parser.add_argument("--show", action="store_true",
                         help="显示生成的输出图片")
     args = parser.parse_args()
@@ -407,6 +456,6 @@ if __name__ == "__main__":
         else:
             raise FileNotFoundError(f"图像文件不存在: {args.input} ，请检查路径或创建 img 文件夹并放入图像。")
 
-    main(args.input, args.output_dir, show_output=args.show)
+    main(args.input, args.output_dir, cutoff_method=args.cutoff_method, show_output=args.show)
     print("\n处理完成！输出文件列表：")
     print(f" - {args.output_dir}/frequency_ideal_filtering_result.png")

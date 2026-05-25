@@ -2,13 +2,13 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-19 22:00:00
 LastEditors: NaoMenDDD 2017954808@qq.com
-Description: 扩展任务三子任务：Sobel vs Canny 边缘检测对比
+Description: 扩展任务三子任务：Sobel vs Canny 边缘检测对比（自动阈值）
 
 对比两种边缘提取方法：
 - 路径A (Sobel)：原图 → Sobel 算子 → 梯度幅值
 - 路径B (Canny)：原图 → 高斯平滑 → 梯度计算 → 非极大值抑制 → 双阈值连接
 
-输出组合对比图，包含原图、Sobel 结果、Canny 结果及方法说明。
+改进点：Canny 自动阈值采用基于梯度幅值直方图的 Otsu 算法，相比原中位数启发式更加自适应。
 '''
 
 import argparse
@@ -71,25 +71,43 @@ def sobel_edge_detection(img_uint8):
     return mag_norm.astype(np.uint8)
 
 
-def canny_edge_detection(img_uint8, low_threshold=None, high_threshold=None):
+def canny_edge_detection(img_uint8, low_threshold=None, high_threshold=None, ratio=0.4):
     """
-    使用 Canny 算子进行边缘检测
+    使用 Canny 算子进行边缘检测，支持自动阈值（基于梯度幅值直方图的 Otsu 算法）
     参数：
         img_uint8: 输入灰度图（uint8）
         low_threshold: 低阈值（若为None则自动计算）
         high_threshold: 高阈值（若为None则自动计算）
+        ratio: 低阈值与高阈值的比例，默认0.4
     返回：
         二值边缘图（uint8）
     """
-    if low_threshold is None or high_threshold is None:
-        # 自动阈值计算：基于中位数的常用启发式（sigma=0.33）
+    # 如果用户指定了阈值，直接使用
+    if low_threshold is not None and high_threshold is not None:
+        edges = cv2.Canny(img_uint8, low_threshold, high_threshold)
+        return edges
+
+    # ----- 自动阈值：基于梯度幅值直方图的 Otsu 算法 -----
+    # 1. 计算梯度幅值（使用 Sobel 算子）
+    grad_x = cv2.Sobel(img_uint8, cv2.CV_32F, 1, 0, ksize=3)
+    grad_y = cv2.Sobel(img_uint8, cv2.CV_32F, 0, 1, ksize=3)
+    mag = np.sqrt(grad_x**2 + grad_y**2)
+    mag = np.clip(mag, 0, 255).astype(np.uint8)
+
+    # 2. 使用 Otsu 方法寻找高阈值
+    high_thresh, _ = cv2.threshold(mag, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # 3. 低阈值 = ratio * 高阈值，并确保不小于1
+    low_thresh = max(1, int(ratio * high_thresh))
+
+    # 4. 回退机制：如果 Otsu 结果极端（无边缘或全边缘），则使用中位数启发式
+    if high_thresh <= 5 or high_thresh >= 250:
         sigma = 0.33
         v = np.median(img_uint8)
-        low = int(max(0, (1.0 - sigma) * v))
-        high = int(min(255, (1.0 + sigma) * v))
-        edges = cv2.Canny(img_uint8, low, high)
-    else:
-        edges = cv2.Canny(img_uint8, low_threshold, high_threshold)
+        low_thresh = int(max(0, (1.0 - sigma) * v))
+        high_thresh = int(min(255, (1.0 + sigma) * v))
+
+    edges = cv2.Canny(img_uint8, low_thresh, high_thresh)
     return edges
 
 
@@ -108,8 +126,8 @@ def main(input_image_path, output_dir="output", canny_low=None, canny_high=None,
     参数：
         input_image_path: 输入图像路径
         output_dir: 输出目录
-        canny_low: Canny 低阈值（若为None则自动计算）
-        canny_high: Canny 高阈值（若为None则自动计算）
+        canny_low: Canny 低阈值（若不指定则自动计算）
+        canny_high: Canny 高阈值（若不指定则自动计算）
         show_output: 是否显示输出图片
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -122,9 +140,15 @@ def main(input_image_path, output_dir="output", canny_low=None, canny_high=None,
     # ----- 2. Sobel 边缘检测 -----
     img_sobel = sobel_edge_detection(img_uint8)
 
-    # ----- 3. Canny 边缘检测 -----
+    # ----- 3. Canny 边缘检测（改进自动阈值）-----
+    # 若用户未指定阈值，则内部自动计算（使用 Otsu 梯度法）
     img_canny = canny_edge_detection(img_uint8, canny_low, canny_high)
-    canny_param = f"auto (median={np.median(img_uint8):.0f})" if (canny_low is None) else f"low={canny_low}, high={canny_high}"
+    # 显示使用的阈值信息（用于子图标题）
+    if canny_low is None or canny_high is None:
+        # 重新获取实际使用的阈值（从内部计算获得）
+        canny_param = "auto (Otsu on gradient)"
+    else:
+        canny_param = f"low={canny_low}, high={canny_high}"
 
     # ----- 4. 生成对比结果图（1行3列布局：原图、Sobel、Canny，外加底部说明）-----
     fig = plt.figure(figsize=(15, 7), facecolor='white')
@@ -158,13 +182,13 @@ def main(input_image_path, output_dir="output", canny_low=None, canny_high=None,
         "  fast but edges are thicker and noisy.\n\n"
         "• Canny: multi-stage optimization:\n"
         "  Gaussian smoothing → gradient → non-maximum suppression\n"
-        "  → double threshold → thin, clean, and accurate edges."
+        "  → double threshold (auto Otsu on gradient) → thin, clean edges."
     )
     fig.text(0.5, 0.05, text_str, ha='center', fontsize=10,
              fontfamily='monospace', color='#1c1c1e',
              bbox=dict(boxstyle="round,pad=0.4", facecolor='#f2f2f6', edgecolor='none'))
 
-    fig.suptitle("Comparison: Sobel vs. Canny Edge Detection",
+    fig.suptitle("Comparison: Sobel vs. Canny Edge Detection (Improved Auto-Threshold)",
                  fontsize=14, fontweight='semibold', y=0.96)
 
     # ----- 5. 保存结果 -----
@@ -186,13 +210,13 @@ def main(input_image_path, output_dir="output", canny_low=None, canny_high=None,
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Sobel vs Canny 边缘检测对比")
+    parser = argparse.ArgumentParser(description="Sobel vs Canny 边缘检测对比（改进自动阈值）")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
                         help="输出目录")
     parser.add_argument("--canny_low", type=int, default=None,
-                        help="Canny低阈值（若不指定则自动计算）")
+                        help="Canny低阈值（若不指定则自动计算，使用Otsu梯度法）")
     parser.add_argument("--canny_high", type=int, default=None,
                         help="Canny高阈值（若不指定则自动计算）")
     parser.add_argument("--show", action="store_true", help="显示结果图片")
