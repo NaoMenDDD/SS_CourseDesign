@@ -128,13 +128,52 @@
 
 ### 任务一：灰度图像频域变换与滤波
 
-1. [问题建模与理论方法](html/task1_freq_filter.html.html)
+#### 1. 理想滤波器
 
-2. [程序实现](py/task1_freq_filter.py)
+1. [问题建模与理论方法](html/task1_freq_filter.html)
+
+2. [程序实现](py/task1_freq_ideal_filter.py)
+   [程序实现2](py/task1_freq_gaussian_filter.py)
 
 3. 效果预览
 
    ![](./imgs/frequency_ideal_filtering_result.png)
+
+4. 代码结构说明
+
+   **模块与函数**
+
+   - `load_grayscale_image`：加载灰度图像，转为 float32
+   - `compute_fft_spectrum`：计算 FFT，返回频移后频谱、对数幅度谱和线性幅度谱
+   - `compute_image_entropy`：计算图像灰度熵，量化纹理复杂度
+   - `compute_spectral_slope`：计算频谱能量径向衰减斜率（对数域），反映平滑程度
+   - `compute_cutoff_frequency_adaptive`：基于频谱斜率和图像熵的自适应截止频率计算
+   - `compute_cutoff_frequency_energy`：传统径向能量累计法（默认 95%）
+   - `compute_cutoff_frequency_3db`：计算 -3dB 截止频率（仅用于显示）
+   - `ideal_lowpass_filter` / `ideal_highpass_filter`：构造理想低通/高通滤波器
+   - `apply_filter_and_reconstruct`：频域滤波 + IFFT，归一化到 0-255
+   - `visualize_log_spectrum`：对数幅度谱归一化显示
+   - `main`：主流程，生成流程图式组合图并保存
+   
+   **处理流程**
+   
+   1. 读入图像，转为灰度图
+   2. 计算 FFT 和对数频谱
+   3. 根据 `--cutoff_method` 选择自适应或能量累计法，确定滤波器设计用的截止频率 `D0_filter`
+   4. 计算 -3dB 截止频率 `D0_display`（仅用于显示）
+   5. 构造理想低通和高通滤波器（使用 `D0_filter`）
+   6. 应用滤波，重建低通/高通图像及其对数频谱
+   7. 绘制 3×5 网格图：原图、原始频谱、低通频谱、低通结果、高通频谱、高通结果，并添加箭头标注
+   8. 标注显示的截止频率（-3dB 值）
+   9. 保存 `frequency_ideal_filtering_result.png`，可选显示
+
+#### 2. 高斯滤波器
+
+1. [问题建模与理论方法](html/task1_ringing.html)
+
+2. [程序实现](py/task1_freq_gaussian_filter.py)
+
+3. 效果预览
 
    ![](./imgs/frequency_gaussian_filtering_result.png)
 
@@ -143,23 +182,28 @@
    **模块与函数**
 
    - `load_grayscale_image`：加载灰度图像，转为 float32
-   - `compute_fft_spectrum`：计算二维 FFT，返回频移频谱和对数幅度
-   - `compute_cutoff_frequency_energy`：基于径向能量累计 95% 计算截止频率（用于滤波器设计）
-   - `compute_cutoff_frequency_3db`：基于 -3dB 定义计算截止频率（仅用于显示）
-   - `gaussian_lowpass_filter` / `gaussian_highpass_filter`：生成高斯低通/高通滤波器
-   - `apply_filter_and_reconstruct`：频域滤波 + IFFT 重建，自动归一化
-   - `visualize_log_spectrum`：将对数幅度谱映射到 0-255 显示
-   - `main`：主流程，生成流程图式组合图，保存 PNG
+   - `compute_fft_spectrum`：计算 FFT，返回频移后频谱、对数幅度谱和线性幅度谱
+   - `compute_image_entropy`：计算图像灰度熵，量化纹理复杂度
+   - `compute_spectral_slope`：计算频谱能量径向衰减斜率（对数域），反映平滑程度
+   - `compute_cutoff_frequency_adaptive`：基于频谱斜率和图像熵的自适应截止频率计算
+   - `compute_cutoff_frequency_energy`：传统径向能量累计法（默认 95%）
+   - `compute_cutoff_frequency_3db`：计算 -3dB 截止频率（仅用于显示）
+   - `gaussian_lowpass_filter` / `gaussian_highpass_filter`：构造高斯低通/高通滤波器
+   - `apply_filter_and_reconstruct`：频域滤波 + IFFT，归一化到 0-255
+   - `visualize_log_spectrum`：对数幅度谱归一化显示
+   - `main`：主流程，生成流程图式组合图并保存
 
    **处理流程**
 
-   1. 读入图像 → FFT 得到频谱
-   2. 计算 D0_filter（能量 95%）和 D0_display（-3dB）
-   3. 构造理想低通/高通滤波器（使用 D0_filter）
-   4. 应用滤波得到低通/高通结果及对应的对数频谱
-   5. 绘制 3×5 网格图：原图、原始频谱、低通频谱、低通结果、高通频谱、高通结果
-   6. 添加箭头流程标注、截止频率显示（-3dB 值）
-   7. 保存组合图 `frequency_filtering_result.png`
+   1. 读入图像，转为灰度图
+   2. 计算 FFT 和对数频谱
+   3. 根据 `--cutoff_method` 选择自适应或能量累计法，确定滤波器设计用的截止频率 `D0_filter`
+   4. 计算 -3dB 截止频率 `D0_display`（仅用于显示）
+   5. 构造高斯低通和高通滤波器（使用 `D0_filter`）
+   6. 应用滤波，重建低通/高通图像及其对数频谱
+   7. 绘制 3×5 网格图：原图、原始频谱、低通频谱、低通结果、高通频谱、高通结果，并添加箭头标注
+   8. 标注显示的截止频率（-3dB 值）
+   9. 保存 `frequency_ideal_filtering_result.png`，可选显示
 
 ### 任务二：差分滤波器设计
 
@@ -195,19 +239,19 @@
    6. 组合图布局：原图、水平梯度、垂直梯度、梯度幅值、滤波器响应（奥运五环式错位）
    7. 保存 `differential_filter_result.png`
 
-### 扩展任务一：*对比理想低通、巴特沃斯低通、高斯低通的振铃效应*
+### 扩展任务A：*对比理想低通、巴特沃斯低通、高斯低通的振铃效应*
 
 1. [问题建模与理论方法](html/ext1_ringing.html)
 2. [程序实现](py/ext1_ringing.py)
 3. [效果预览](py/output/ringing_comparison.png)
 
-### 扩展任务二：同态滤波光照校正 - 频域增强
+### 扩展任务B：同态滤波光照校正 - 频域增强
 
 1. [问题建模与理论方法](html/ext2_homomorphic.html)
 2. [程序实现](ext2_homomorphic.py)
 3. [效果预览](output/homomorphic_filtering_result.png)
 
-### 扩展任务三：
+### 扩展任务C：
 
 #### 1. 频域高通滤波 vs `Sobel`边缘检测对比
 
@@ -223,22 +267,24 @@
 
    **模块与函数**
 
-   - `load_grayscale_image`：加载灰度图像，转为 float32
-   - `compute_cutoff_frequency`：基于径向能量累计 95% 计算自适应截止频率
+   - `load_grayscale_image`：加载灰度图，转为 float32
+   - `compute_image_entropy` / `compute_spectral_slope`：图像熵与频谱斜率
+   - `compute_cutoff_frequency_adaptive` / `compute_cutoff_frequency_energy`：自适应/能量累计截止频率（用于高通）
    - `ideal_highpass_filter` / `gaussian_highpass_filter`：构造理想/高斯高通滤波器
-   - `apply_filter_and_reconstruct`：频域滤波 + IFFT，取绝对值并归一化到 0-255
-   - `sobel_edge_detection`：空域 Sobel 算子（ksize=3），计算梯度幅度并归一化
-   - `normalize_display`：归一化到 0-255 用于显示
-   - `main`：生成对比组合图
-
+   - `apply_filter_and_reconstruct`：频域滤波重建
+   - `sobel_edge_detection`：Sobel 算子（ksize=3）计算梯度幅值
+   - `normalize_display`：归一化显示
+   - `main`：主流程，生成 2×2 对比图
+   
    **处理流程**
-
-   1. 读入图像 → FFT 计算自适应截止频率 D0
-   2. 根据 `--filter_type` 构造高通滤波器（理想或高斯），应用得到频域高通边缘图
-   3. 计算 Sobel 梯度幅度图
-   4. 生成 1 行 3 列布局：原图、频域高通结果、Sobel 结果
-   5. 底部添加方法对比说明文本框
-   6. 保存/显示`hpf_vs_sobel.png`
+   
+   1. 加载图像
+   2. 计算 FFT 及截止频率 `D0`（根据 `--cutoff_method`）
+   3. 分别构造理想高通和高斯高通滤波器，应用得到 `img_hp_ideal` 和 `img_hp_gaussian`
+   4. 计算 Sobel 梯度幅值图 `img_sobel`
+   5. 绘制 2×2 网格图：原图、Sobel、理想高通结果、高斯高通结果
+   6. 添加底部说明文字（对比总结）
+   7. 保存 `hpf_vs_sobel.png`
 
 #### 2. `Sobel`核大小对比
 
@@ -255,16 +301,16 @@
    **模块与函数**
 
    - `load_grayscale_image`：加载灰度图像，返回 uint8
-   - `sobel_gradient_magnitude`：计算指定 ksize 的 Sobel 梯度幅度，自动归一化
-   - `main`：生成对比组合图
+   - `sobel_gradient_magnitude`：计算指定 ksize 的 Sobel 梯度幅度，使用 OpenCV 归一化
+   - `main`：生成组合对比图
 
    **处理流程**
 
    1. 读入图像
-   2. 分别用 ksize=3, 7, 11 计算 Sobel 梯度幅度图
+   2. 分别用 ksize=3, 7, 11 调用 `sobel_gradient_magnitude`，得到 `sobel_3, sobel_7, sobel_11`
    3. 绘制 2×2 网格图：原图、ksize=3 结果、ksize=7 结果、ksize=11 结果
-   4. 添加标题和说明文字，标注各核大小的特性
-   5. 保存/显示 `sobel_kernel_comparison.png`
+   4. 添加总标题及底部说明
+   5. 保存 `sobel_kernel_comparison.png`
 
 #### 3. Sobel vs Canny 边缘检测
 
@@ -278,22 +324,22 @@
 
 4. 代码结构：
 
-   ***模块与函数**
+   **模块与函数**
 
-   - `load_grayscale_image`：加载灰度图像，转为 float32
-   - `sobel_edge_detection`：Sobel 算子（ksize=3），梯度幅度归一化
-   - `canny_edge_detection`：Canny 算子，支持自动阈值（中位数 ±33%）或用户指定
-   - `normalize_display`：归一化到 0-255 用于显示
-   - `main`：生成对比组合图
+   - `load_grayscale_image`：加载灰度图，转为 float32
+   - `sobel_edge_detection`：Sobel 梯度幅值（ksize=3）
+   - `canny_edge_detection`：Canny 检测，支持自动阈值（基于梯度幅值直方图 Otsu，比例 0.4，回退中位数法）
+   - `normalize_display`：归一化显示
+   - `main`：主流程，生成 1×3 对比图
 
    **处理流程**
 
-   1. 读入图像
-   2. 计算 Sobel 梯度幅度图
-   3. 计算 Canny 边缘图（自动或手动阈值）
-   4. 生成 1 行 3 列布局：原图、Sobel 结果、Canny 结果
-   5. 底部添加方法对比说明（Sobel 与 Canny 的优缺点）
-   6. 保存/显示 `sobel_vs_canny.png`
+   1. 加载图像，转为 uint8
+   2. 计算 Sobel 梯度幅值
+   3. 调用 `canny_edge_detection` 获得二值边缘图（自动阈值或用户指定）
+   4. 绘制 1×3 布局：原图、Sobel 结果、Canny 结果
+   5. 添加底部说明文字
+   6. 保存 `sobel_vs_canny.png`
 
 ------
 
