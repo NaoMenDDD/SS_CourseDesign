@@ -1,15 +1,13 @@
 '''
 Author: NaoMenDDD 2017954808@qq.com
-Date: 2026-05-19 22:00:00
+Date: 2026-05-19 21:03:58
 LastEditors: NaoMenDDD 2017954808@qq.com
-Description: 扩展任务三子任务：Sobel vs Canny 边缘检测对比（自动阈值）
+LastEditTime: 2026-05-26 17:15:17
+Description: 对比 Sobel 与 Canny 边缘检测算法的效果
 
-对比两种边缘提取方法：
-- 路径A (Sobel)：原图 → Sobel 算子 → 梯度幅值
-- 路径B (Canny)：原图 → 高斯平滑 → 梯度计算 → 非极大值抑制 → 双阈值连接
-
-改进点：Canny 自动阈值采用基于梯度幅值直方图的 Otsu 算法，相比原中位数启发式更加自适应。
+Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
 '''
+
 
 import argparse
 import numpy as np
@@ -210,7 +208,7 @@ def main(input_image_path, output_dir="output", canny_low=None, canny_high=None,
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Sobel vs Canny 边缘检测对比（改进自动阈值）")
+    parser = argparse.ArgumentParser(description="Sobel vs Canny 边缘检测对比（自动阈值）")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",

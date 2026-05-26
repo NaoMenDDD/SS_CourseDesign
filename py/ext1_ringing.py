@@ -2,8 +2,8 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-14 16:36:11
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-19 22:05:22
-Description: 扩展任务一：对比理想低通、巴特沃斯低通、高斯低通的振铃效应
+LastEditTime: 2026-05-26 17:13:56
+Description: 扩展任务A：对比理想低通、巴特沃斯低通、高斯低通的振铃效应
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
 '''
@@ -196,7 +196,7 @@ def main(input_image_path, output_dir="output", butterworth_order=2, show_output
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="扩展任务一：对比理想低通、巴特沃斯低通、高斯低通的振铃效应")
+    parser = argparse.ArgumentParser(description="扩展任务A：对比理想低通、巴特沃斯低通、高斯低通的振铃效应")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",

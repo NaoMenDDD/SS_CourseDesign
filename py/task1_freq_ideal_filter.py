@@ -2,7 +2,7 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-13 14:52:43
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-26 03:58:01
+LastEditTime: 2026-05-26 17:16:20
 Description: 任务一：频域理想滤波器设计与应用（自适应截止频率）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
@@ -432,7 +432,7 @@ def main(input_image_path, output_dir="output", cutoff_method="adaptive", show_o
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="灰度图像频域处理：理想低通/高通滤波（改进自适应截止频率）")
+    parser = argparse.ArgumentParser(description="灰度图像频域处理：理想低通/高通滤波（自适应截止频率）")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径（支持 .bmp .jpg .png），默认 img/house.bmp")
     parser.add_argument("--output_dir", "-o", type=str, default="output",

@@ -2,8 +2,8 @@
 Author: NaoMenDDD 2017954808@qq.com
 Date: 2026-05-14 16:36:28
 LastEditors: NaoMenDDD 2017954808@qq.com
-LastEditTime: 2026-05-26 04:04:49
-Description: 扩展任务三：频域高通滤波与 Sobel 边缘检测对比（自适应截止频率）
+LastEditTime: 2026-05-26 17:14:41
+Description: 扩展任务C：频域高通滤波与 Sobel 边缘检测对比（自适应截止频率）
 
 Copyright (c) 2026 by NaoMenDDD, All Rights Reserved. 
 '''
@@ -351,7 +351,7 @@ def main(input_image_path, output_dir="output", cutoff_method="adaptive", show_o
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="高通滤波 vs Sobel 边缘检测对比（改进自适应截止频率）")
+    parser = argparse.ArgumentParser(description="高通滤波 vs Sobel 边缘检测对比（自适应截止频率）")
     parser.add_argument("--input", "-i", type=str, default="img/house.bmp",
                         help="输入图像路径")
     parser.add_argument("--output_dir", "-o", type=str, default="output",
