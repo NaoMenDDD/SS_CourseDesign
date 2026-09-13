@@ -243,13 +243,13 @@
 
 1. [问题建模与理论方法](html/ext1_ringing.html)
 2. [程序实现](py/ext1_ringing.py)
-3. [效果预览](py/output/ringing_comparison.png)
+3. [效果预览](./imgs/ringing_comparison.png)
 
 ### 扩展任务B：同态滤波光照校正 - 频域增强
 
 1. [问题建模与理论方法](html/ext2_homomorphic.html)
-2. [程序实现](ext2_homomorphic.py)
-3. [效果预览](output/homomorphic_filtering_result.png)
+2. [程序实现](py/ext2_homomorphic.py)
+3. [效果预览](./imgs/homomorphic_filtering_result.png)
 
 ### 扩展任务C：
 
