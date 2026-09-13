@@ -8,6 +8,11 @@
 
 # 脚本运行输出（可重新生成，报告用图统一放在 imgs/）
 py/output/
+output/
+
+# Python 缓存
+__pycache__/
+*.pyc
 
 # 办公软件锁文件
 *~lock*
